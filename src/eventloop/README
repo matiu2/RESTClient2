@@ -1,0 +1,2 @@
+Provides an interface that allows multiple asynchronous streams to work at once, as well as multiple threads.
+
