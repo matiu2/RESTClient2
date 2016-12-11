@@ -27,9 +27,9 @@ struct Test {
         hostname(hostname), port(port), params(params), path(path), parts(url) {
     if (port == 0) {
       if (protocol == "http") {
-        port = 80;
+        this->port = 80;
       } else {
-        port = 443;
+        this->port = 443;
         assert(protocol == "https");
       }
     }
@@ -43,11 +43,33 @@ struct Test {
           << parts.protocol << ")"
           << "\n";
     }
+    // Username
+    if (username != parts.username) {
+      msg << "Username doens't match: expected (" << username << ") but found ("
+          << parts.username << ")\n";
+    }
+    // Password
+    if (password != parts.password) {
+      msg << "Password doens't match: expected (" << password << ") but found ("
+          << parts.password << ")\n";
+    }
     // Hostname
     if (hostname != parts.hostname) {
       msg << "Hostname doens't match: expected (" << hostname << ") but found ("
           << parts.hostname << ")\n";
     }
+    // Port
+    if (port != parts.port) {
+      msg << "Port doens't match: expected (" << port << ") but found ("
+          << parts.port << ")\n";
+    }
+    // Path
+    if (path != parts.path) {
+      msg << "Path doens't match: expected (" << path << ") but found ("
+          << parts.path << ")\n";
+    }
+    // Check each param
+    // TODO
 
     // All done
     std::string out = msg.str();

@@ -59,6 +59,10 @@ URL::URL(const std::string &url) {
   // Read the username and password
   auto userpass = boost::fusion::tie(username, password);
   ok = x3::phrase_parse(i, end, parser::userpass, parser::space, userpass);
+  if (!ok) {
+    username = "";
+    password = "";
+  }
   
   // Read the hostname
   ok = x3::phrase_parse(i, end, parser::hostname, parser::space, hostname);
