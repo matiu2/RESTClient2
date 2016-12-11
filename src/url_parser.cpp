@@ -29,10 +29,10 @@ auto port = lit(':') >> x3::ushort_;
 auto path = char_('/') >> *(char_ - (lit('?') | eol | eoi));
 
 // params
-auto param = +(char_ - '=');
-auto value = +(char_ - ('&' | eoi | eol));
-auto param_pair = param >> '=' >> value;
-auto params = lit('?') >> param_pair % '&';
+auto param = +(char_ - '=') >> '=';
+auto value = +(char_ - ('&' | eoi | eol)) >> ('&' | eol | eoi);
+//auto param_pair = param >> '=' >> value;
+//uto params = lit('?') >> param_pair % '&';
 
 auto url = protocol >> -userpass >> hostname >> -port >> -path; // minus params
 
@@ -87,22 +87,29 @@ URL::URL(const std::string &url) {
   x3::phrase_parse(i, end, parser::path, parser::space, path);
 
   // Read the params
-  while (i != end) {
-    std::string param, value;
-    ok = x3::phrase_parse(i, end, parser::param, parser::space, param);
-    if (!ok) {
-      std::stringstream msg;
-      msg << "Expected a 'param=' but got no equals at position : "
-          << i - url.begin() << " in url: " << url;
-      throw std::runtime_error(msg.str());
-    }
-    ok = x3::phrase_parse(i, end, parser::value, parser::space, value);
-    if (!ok) {
-      std::stringstream msg;
-      msg << "Expected a param value, followed by an '&' or end of line or end "
-             "of input, but got somethnig else at position : "
-          << i - url.begin() << " in url: " << url;
-      throw std::runtime_error(msg.str());
+  if (i != end) {
+    ok = x3::phrase_parse(i, end, parser::lit('?'), parser::space);
+    if (ok) {
+      while (i != end) {
+        std::string param, value;
+        ok = x3::phrase_parse(i, end, parser::param, parser::space, param);
+        if (!ok) {
+          std::stringstream msg;
+          msg << "Expected a 'param=' but got no equals at position : "
+              << i - url.begin() << " in url: " << url;
+          throw std::runtime_error(msg.str());
+        }
+        ok = x3::phrase_parse(i, end, parser::value, parser::space, value);
+        if (!ok) {
+          std::stringstream msg;
+          msg << "Expected a param value, followed by an '&' or end of line or "
+                 "end "
+                 "of input, but got somethnig else at position : "
+              << i - url.begin() << " in url: " << url;
+          throw std::runtime_error(msg.str());
+        }
+        params.insert(std::make_pair(param, value));
+      }
     }
   }
 }

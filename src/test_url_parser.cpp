@@ -24,7 +24,8 @@ struct Test {
        string username = "", string password = "", unsigned short port = 0,
        map<string, string> params = {})
       : url(url), protocol(protocol), username(username), password(password),
-        hostname(hostname), port(port), params(params), path(path), parts(url) {
+        hostname(hostname), path(path), port(port), params(std::move(params)),
+        parts(url) {
     if (port == 0) {
       if (protocol == "http") {
         this->port = 80;
@@ -69,7 +70,37 @@ struct Test {
           << parts.path << ")\n";
     }
     // Check each param
-    // TODO
+    bool print_params = false;
+    if (params.size() != parts.params.size()) {
+      msg << "We have a different number of params; expected (" << params.size()
+          << ") but got (" << parts.params.size() << ")\n";
+      print_params = true;
+    }
+
+    for (const auto &p1 : params) {
+      const auto &key = p1.first;
+      const auto &val = p1.second;
+      auto found = parts.params.find(key);
+      if (found == parts.params.end()) {
+        msg << "Param (" << key << ") not found\n";
+        print_params = true;
+      }
+      if (found->second != val) {
+        msg << "Parama (" << key << ") had different value; expected (" << val
+            << ") but got (" << found->second << ")\n";
+        print_params = true;
+      }
+    }
+
+    if (print_params) {
+      msg << "\nExpected params: \n";
+      for (const auto& param : params)
+        msg << param.first << "=" << param.second << "\n";
+
+      msg << "\nGotten params: \n";
+      for (const auto& param : parts.params)
+        msg << param.first << "=" << param.second << "\n";
+    }
 
     // All done
     std::string out = msg.str();
