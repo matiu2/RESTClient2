@@ -20,21 +20,17 @@ using x3::space;
 auto protocol = (x3::string("https") | x3::string("http")) >> "://";
 
 // Everything auth related
-auto username = +(x3::char_ - (char_(":") | '@' | eoi | eol));
+auto username = +(x3::char_ - (lit(':') | '@' | eoi | eol));
 auto password = lit(':') >> +(x3::char_ - '@');
-auto userpass = username >> (password | '@');
+auto userpass = username >> -password >> '@';
 
-auto hostname = +(char_ - (lit('?') | "/" | x3::eol | x3::eoi));
+auto hostname = +(char_ - (lit('?') | '/' | ':' | x3::eol | x3::eoi));
 auto port = lit(':') >> x3::ushort_;
 auto path = char_('/') >> *(char_ - (lit('?') | eol | eoi));
 
 // params
 auto param = +(char_ - '=') >> '=';
 auto value = +(char_ - ('&' | eoi | eol)) >> ('&' | eol | eoi);
-//auto param_pair = param >> '=' >> value;
-//uto params = lit('?') >> param_pair % '&';
-
-auto url = protocol >> -userpass >> hostname >> -port >> -path; // minus params
 
 }
 

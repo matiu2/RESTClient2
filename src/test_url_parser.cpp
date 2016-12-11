@@ -122,7 +122,11 @@ int main(int, char *[]) {
       Test("https://www.google.com/something", "https", "www.google.com",
            "/something"),
       Test("http://user1@gmail.com?x=1&y=2", "http", "gmail.com", "", "user1",
-           "", 80, {{"x", "1"}, {"y", "2"}})};
+           "", 80, {{"x", "1"}, {"y", "2"}}),
+      Test("https://user1:pass2@gmail.com:8043/execute/awesomeness?x=1&y=2",
+           "https", "gmail.com", "/execute/awesomeness", "user1", "pass2", 8043,
+           {{"x", "1"}, {"y", "2"}})
+  };
   for (const Test& test : tests)
     test.test();
 
