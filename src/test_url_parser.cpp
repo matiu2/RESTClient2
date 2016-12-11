@@ -12,20 +12,19 @@ using namespace std;
 struct Test {
   string url;
   string protocol;
-  string path;
   string username;
   string password;
   string hostname;
+  string path;
   unsigned short port;
   map<string, string> params;
 
-  URL parts;
+  RESTClient::URL parts;
   Test(string url, string protocol, string hostname, string path = "",
        string username = "", string password = "", unsigned short port = 0,
        map<string, string> params = {})
-      : url(url), protocol(protocol), path(path), username(username),
-        password(password), hostname(hostname), port(port), params(params),
-        parts(url) {
+      : url(url), protocol(protocol), username(username), password(password),
+        hostname(hostname), port(port), params(params), path(path), parts(url) {
     if (port == 0) {
       if (protocol == "http") {
         port = 80;
@@ -38,11 +37,19 @@ struct Test {
   bool test() const {
     cout << "Testing url: " << url << std::endl;
     std::stringstream msg;
+    // Protocol
     if (protocol != parts.protocol) {
       msg << "Protocol doesn't match: expected (" << protocol << ") but found ("
           << parts.protocol << ")"
           << "\n";
     }
+    // Hostname
+    if (hostname != parts.hostname) {
+      msg << "Hostname doens't match: expected (" << hostname << ") but found ("
+          << parts.hostname << ")\n";
+    }
+
+    // All done
     std::string out = msg.str();
     if (out.size() > 0) {
       cerr << "Test failed foraurl (" << url << ":\n" << msg.str() << '\n';
@@ -60,7 +67,9 @@ int main(int, char *[]) {
       Test("https://www.google.com/something", "https", "www.google.com",
            "/something"),
       Test("https://www.google.com/something", "https", "www.google.com",
-           "/something")};
+           "/something"),
+      Test("http://user1@gmail.com?x=1&y=2", "http", "gmail.com", "", "user1",
+           "", 80, {{"x", "1"}, {"y", "2"}})};
   for (const Test& test : tests)
     test.test();
 

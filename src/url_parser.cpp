@@ -1,11 +1,13 @@
 #include "url_parser.hpp"
 
 #include <boost/spirit/home/x3.hpp>
+#include <boost/fusion/tuple.hpp>
 #include <sstream>
 #include <stdexcept>
 #include <cassert>
 
 namespace x3 = boost::spirit::x3;
+
 
 namespace parser {
 
@@ -13,13 +15,14 @@ using x3::char_;
 using x3::lit;
 using x3::eol;
 using x3::eoi;
+using x3::space;
 
-auto protocol = x3::string("https") | x3::string("http") >> "://";
+auto protocol = (x3::string("https") | x3::string("http")) >> "://";
 
 // Everything auth related
-auto username = +(x3::char_ - (char_(":") | char_("@") | eoi | eol));
-auto password = lit(':') >> +(x3::char_ - char_("@"));
-auto at = lit('@');
+auto username = +(x3::char_ - (char_(":") | '@' | eoi | eol));
+auto password = lit(':') >> +(x3::char_ - '@');
+auto userpass = username >> (password | '@');
 
 auto hostname = +(char_ - (lit('?') | "/" | x3::eol | x3::eoi));
 auto port = lit(':') >> x3::ushort_;
@@ -31,15 +34,21 @@ auto value = +(char_ - ('&' | eoi | eol));
 auto param_pair = param >> '=' >> value;
 auto params = lit('?') >> param_pair % '&';
 
-//auto url = protocol >> -(userpass | useronly) >> hostname >> -port >> -path; // minus params
+auto url = protocol >> -userpass >> hostname >> -port >> -path; // minus params
+
 }
+
+namespace RESTClient
+{
+  
 
 URL::URL(const std::string &url) {
   auto i = url.begin();
   auto end = url.end();
+
   // Read the protocol
   bool ok =
-      x3::phrase_parse(i, end, parser::protocol, parser::eol, protocol);
+      x3::phrase_parse(i, end, parser::protocol, parser::space, protocol);
   if (!ok) {
     std::stringstream msg;
     msg << "No protocol found in '" << url
@@ -48,20 +57,11 @@ URL::URL(const std::string &url) {
   }
 
   // Read the username and password
-  auto before_username = i;
-  ok = x3::phrase_parse(i, end, parser::username, parser::eol, username);
-  if (ok) {
-    ok = x3::phrase_parse(i, end, parser::password, parser::eol, password);
-    if (!ok) {
-      ok = x3::phrase_parse(i, end, parser::at, parser::eol);
-      if (!ok)
-        // There was no username we have to go back
-        i = before_username;
-    }
-  }
+  auto userpass = boost::fusion::tie(username, password);
+  ok = x3::phrase_parse(i, end, parser::userpass, parser::space, userpass);
   
   // Read the hostname
-  ok = x3::phrase_parse(i, end, parser::hostname, parser::eol, hostname);
+  ok = x3::phrase_parse(i, end, parser::hostname, parser::space, hostname);
   if (!ok) {
     std::stringstream msg;
     msg << "Couldn't parse a hostname from this URL: " << url;
@@ -69,7 +69,7 @@ URL::URL(const std::string &url) {
   }
 
   // Read the port
-  ok = x3::phrase_parse(i, end, parser::port, parser::eol, port);
+  ok = x3::phrase_parse(i, end, parser::port, parser::space, port);
   if (!ok) {
     if (protocol == "http")
       port = 80;
@@ -80,18 +80,19 @@ URL::URL(const std::string &url) {
   }
 
   // Read the path
-  x3::phrase_parse(i, end, parser::path, parser::eol, path);
+  x3::phrase_parse(i, end, parser::path, parser::space, path);
 
   // Read the params
   while (i != end) {
     std::string param, value;
-    ok = x3::phrase_parse(i, end, parser::param, parser::eol, param);
+    ok = x3::phrase_parse(i, end, parser::param, parser::space, param);
     if (!ok) {
       std::stringstream msg;
-      msg << "Expected a 'param=' but got no equals at position : " <<  i - url.begin() << " in url: " << url;
+      msg << "Expected a 'param=' but got no equals at position : "
+          << i - url.begin() << " in url: " << url;
       throw std::runtime_error(msg.str());
     }
-    ok = x3::phrase_parse(i, end, parser::value, parser::eol, value);
+    ok = x3::phrase_parse(i, end, parser::value, parser::space, value);
     if (!ok) {
       std::stringstream msg;
       msg << "Expected a param value, followed by an '&' or end of line or end "
@@ -127,3 +128,5 @@ std::string URL::url() const {
   }
   return out.str();
 }
+
+} /* RESTClient */ 

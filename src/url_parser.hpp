@@ -3,6 +3,10 @@
 #include <string>
 #include <map>
 
+namespace RESTClient
+{
+  
+
 /// Splits a URL into parts (all we need right now)
 struct URL {
   std::string protocol;
@@ -15,3 +19,5 @@ struct URL {
   URL(const std::string& url);
   std::string url() const;
 };
+
+} /* RESTClient */ 
