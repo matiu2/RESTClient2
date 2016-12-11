@@ -131,7 +131,7 @@ std::string URL::url() const {
     auto end = --params.end();
     for (auto i = params.begin(); i != end; ++i)
       out << i->first << '=' << i->second << '&';
-    out << end->first << '=' << end->second << '&';
+    out << end->first << '=' << end->second;
   }
   return out.str();
 }

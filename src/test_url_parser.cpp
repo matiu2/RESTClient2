@@ -102,6 +102,14 @@ struct Test {
         msg << param.first << "=" << param.second << "\n";
     }
 
+    // Now get the url back out of it
+    auto new_url = parts.url();
+    if (url != new_url) {
+      msg << "URL (" << url << ") didn't convert back the same (" << new_url
+          << ")\n";
+    }
+
+
     // All done
     std::string out = msg.str();
     if (out.size() > 0) {
