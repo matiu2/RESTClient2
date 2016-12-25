@@ -11,6 +11,11 @@ if(${IS_CLANG})
     add_definitions(-fPIC -std=c++1z -stdlib=libc++)
 endif()
 
+add_definitions(-DBOOST_COROUTINES_NO_DEPRECATION_WARNING)
+
+# This is needed because boost asio still calls boost::coroutines 1, which is deprecated
+add_definitions(-DBOOST_COROUTINE_NO_DEPRECATION_WARNING)
+
 include(cmake/dependencies.cmake)
 
 add_subdirectory(src)

@@ -1,3 +1,6 @@
+# C++
+find_library(CPP c++)
+
 # Threads
 find_package(Threads)
 

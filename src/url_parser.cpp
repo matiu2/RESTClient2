@@ -1,13 +1,14 @@
 #include "url_parser.hpp"
 
-#include <boost/spirit/home/x3.hpp>
 #include <boost/fusion/tuple.hpp>
+#include <boost/spirit/home/x3.hpp>
+#include <cassert>
 #include <sstream>
 #include <stdexcept>
-#include <cassert>
 
 namespace x3 = boost::spirit::x3;
 
+namespace RESTClient {
 
 namespace parser {
 
@@ -31,20 +32,14 @@ auto path = char_('/') >> *(char_ - (lit('?') | eol | eoi));
 // params
 auto param = +(char_ - '=') >> '=';
 auto value = +(char_ - ('&' | eoi | eol)) >> ('&' | eol | eoi);
-
 }
-
-namespace RESTClient
-{
-  
 
 URL::URL(const std::string &url) {
   auto i = url.begin();
   auto end = url.end();
 
   // Read the protocol
-  bool ok =
-      x3::phrase_parse(i, end, parser::protocol, parser::space, protocol);
+  bool ok = x3::phrase_parse(i, end, parser::protocol, parser::space, protocol);
   if (!ok) {
     std::stringstream msg;
     msg << "No protocol found in '" << url
@@ -59,7 +54,7 @@ URL::URL(const std::string &url) {
     username = "";
     password = "";
   }
-  
+
   // Read the hostname
   ok = x3::phrase_parse(i, end, parser::hostname, parser::space, hostname);
   if (!ok) {
@@ -136,4 +131,4 @@ std::string URL::url() const {
   return out.str();
 }
 
-} /* RESTClient */ 
+} /* RESTClient */

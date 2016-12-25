@@ -3,9 +3,7 @@
 #include <string>
 #include <map>
 
-namespace RESTClient
-{
-  
+namespace RESTClient {
 
 /// Splits a URL into parts (all we need right now)
 struct URL {
