@@ -5,6 +5,8 @@
 #include <boost/asio/spawn.hpp>
 #include <boost/asio/ip/tcp.hpp>
 
+#include "Connection.hpp"
+
 namespace RESTClient {
 namespace tcpip {
 

@@ -4,12 +4,7 @@
 
 using namespace RESTClient::tcpip;
 
-void doWork(yield_context yield) {
-  auto addresses = lookup("httpbin.org", "http", yield);
-
-
-    
-}
+void doWork(yield_context yield) { Connection c("httpbin.org", "http", yield); }
 
 int main(int, char **) {
   auto io = getService();

@@ -17,8 +17,9 @@ private:
   pimpl<impl> m;
 
 public:
-  Connection(tcp::resolver::iterator address, yield_context yield,
+  Connection(std::string address, std::string service, yield_context yield,
              bool is_ssl = true);
+  ~Connection();
   void send(const std::string& data);
   void recv(std::string& data, std::size_t max);
   void recv(std::string& data, char delim);
