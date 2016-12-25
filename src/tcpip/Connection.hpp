@@ -20,9 +20,13 @@ public:
   Connection(std::string address, std::string service, yield_context yield,
              bool is_ssl = true);
   ~Connection();
-  void send(const std::string& data);
-  void recv(std::string& data, std::size_t max);
+  void send(std::string data);
+  /// Recv exactly 'size' bytes
+  void recv(std::string& data, std::size_t size);
+  /// Receive until we hit some deliminator
   void recv(std::string& data, char delim);
+  /// Receive a line
+  void recv(std::string& data) { recv(data, '\n'); }
 };
 
 } // tcpip 
