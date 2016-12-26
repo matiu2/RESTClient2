@@ -47,12 +47,11 @@ public:
   }
 
   void recv(std::string &data, size_t size) { 
-    asio::async_read(socket, _buf, asio::transfer_exactly(size), yield);
-    assert(_buf.size() >= size);
-    data.reserve(data.size() + _buf.size());
-    auto begin = asio::buffers_begin(_buf.data());
-    std::copy(begin, begin + size, std::back_inserter(data));
-    _buf.consume(size);
+    SpyRange fromNet = spy(size);
+    assert(fromNet.size() > size);
+    data.reserve(data.size() + size);
+    std::copy(fromNet.begin(), fromNet.begin() + size, std::back_inserter(data));
+    consume(size);
   }
 
   void recv(std::string &out, char delim) {
@@ -73,10 +72,42 @@ public:
       asio::async_read_until(socket, _buf, delim, yield);
     }
   }
+
+  Connection::SpyRange spy(size_t size) {
+    size_t startingSize = _buf.size();
+    size_t toGet = (startingSize < size) ? size - startingSize : 0;
+    asio::async_read(socket, _buf, asio::transfer_at_least(toGet), yield);
+    assert(_buf.size() >= size);
+    const auto &buffers = _buf.data();
+    return SpyRange(asio::buffers_begin(buffers), asio::buffers_end(buffers));
+  }
+
+  Connection::SpyRange spy(char delim) {
+    if (_buf.size() == 0)
+      asio::async_read_until(socket, _buf, delim, yield);
+    while (true) {
+      // First check if we already have it before trying to read it
+      auto in = asio::buffers_begin(_buf.data());
+      auto eos = asio::buffers_end(_buf.data());
+      auto found = std::find(in, eos, delim);
+      if (found != eos)
+        break;
+      // The current buffer doesn't contain 'delim'.
+      // We need to read more data from the net.
+      // TODO: Maybe we need to specify a timeout and catch timeout errors here ..
+      asio::async_read_until(socket, _buf, delim, yield);
+    }
+    const auto &buffers = _buf.data();
+    return SpyRange(asio::buffers_begin(buffers), asio::buffers_end(buffers));
+  }
+
+  void consume(size_t size) {
+    _buf.consume(size);
+  }
 };
 
-Connection::Connection(std::string address, std::string service, yield_context yield,
-                       bool is_ssl)
+Connection::Connection(std::string address, std::string service,
+                       yield_context yield, bool is_ssl)
     : m(address, service, yield, is_ssl) {}
 
 Connection::~Connection() {}
@@ -85,6 +116,9 @@ void Connection::send(std::string data) { m->send(std::move(data)); }
 
 void Connection::recv(std::string &data, size_t size) { m->recv(data, size); }
 void Connection::recv(std::string &data, char delim) { m->recv(data, delim); }
+Connection::SpyRange Connection::spy(char delim) { return m->spy(delim); }
+Connection::SpyRange Connection::spy(size_t size) { return m->spy(size); }
+void Connection::consume(size_t size) { m->consume(size); }
 
 } // tcpip
 } /* RESTClient */ 
