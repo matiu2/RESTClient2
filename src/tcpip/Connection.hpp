@@ -26,7 +26,7 @@ public:
   Connection(std::string address, std::string service, yield_context yield,
              bool is_ssl = true);
   ~Connection();
-  void send(std::string data);
+  void send(const std::string& data);
   /// Recv exactly 'size' bytes
   void recv(std::string& data, std::size_t size);
   /// Receive until we hit some deliminator

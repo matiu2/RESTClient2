@@ -42,7 +42,7 @@ public:
   ~impl() {
   }
 
-  void send(std::string data) {
+  void send(const std::string &data) {
     asio::async_write(socket, asio::buffer(data), yield);
   }
 
@@ -112,7 +112,7 @@ Connection::Connection(std::string address, std::string service,
 
 Connection::~Connection() {}
 
-void Connection::send(std::string data) { m->send(std::move(data)); }
+void Connection::send(const std::string &data) { m->send(std::move(data)); }
 
 void Connection::recv(std::string &data, size_t size) { m->recv(data, size); }
 void Connection::recv(std::string &data, char delim) { m->recv(data, delim); }
