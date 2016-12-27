@@ -50,27 +50,19 @@ public:
     SpyRange fromNet = spy(size);
     assert(fromNet.size() > size);
     data.reserve(data.size() + size);
-    std::copy(fromNet.begin(), fromNet.begin() + size, std::back_inserter(data));
+    std::copy(fromNet.begin(), fromNet.begin() + size,
+              std::back_inserter(data));
     consume(size);
   }
 
   void recv(std::string &out, char delim) {
     // Copy whatever we have in the buffer to out
-    while (true) {
-      auto in = asio::buffers_begin(_buf.data());
-      auto eos = asio::buffers_end(_buf.data());
-      auto found = std::find(in, eos, delim);
-      auto sz = std::distance(in, found);
-      out.reserve(out.size() + sz);
-      std::copy(in, found, std::back_inserter(out));
-      _buf.consume(sz);
-      if (found != eos)
-        break;
-      // We have copied all the cached buffer, but still not come across delim,
-      // We need to read more data from the net
-      // TODO: Maybe we need to specify a timeout and catch timeout errors here ..
-      asio::async_read_until(socket, _buf, delim, yield);
-    }
+    auto range = spy('\n');
+    auto found = std::find(range.begin(), range.end(), delim);
+    auto sz = std::distance(range.begin(), found);
+    out.reserve(out.size() + sz);
+    std::copy(range.begin(), found, std::back_inserter(out));
+    consume(sz + 1);
   }
 
   Connection::SpyRange spy(size_t size) {
@@ -86,7 +78,8 @@ public:
     if (_buf.size() == 0)
       asio::async_read_until(socket, _buf, delim, yield);
     while (true) {
-      // First check if we already have it before trying to read it
+      // First check if we already have it in the buffer from previous reads
+      // before trying to read it
       auto in = asio::buffers_begin(_buf.data());
       auto eos = asio::buffers_end(_buf.data());
       auto found = std::find(in, eos, delim);
