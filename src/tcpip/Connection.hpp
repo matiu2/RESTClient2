@@ -24,7 +24,7 @@ private:
 
 public:
   Connection(std::string address, std::string service, yield_context yield,
-             bool is_ssl = true);
+             bool is_ssl = false);
   ~Connection();
   /// Send data through the internet
   void send(const std::string& data);

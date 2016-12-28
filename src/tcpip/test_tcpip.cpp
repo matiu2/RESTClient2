@@ -22,9 +22,7 @@ namespace parser {
   auto ws = lit(' ');
 } /* parser  */
 
-void doWork(yield_context yield) {
-  // Send the HTTP request
-  Connection c("httpbin.org", "http", yield);
+void doWork(yield_context yield, Connection &&c) {
   std::string request("GET /get HTTP/1.1\r\n"
                       "Host: httpbin.org\r\n"
                       "X-My-Header: test21\r\n"
@@ -91,11 +89,17 @@ void doWork(yield_context yield) {
   c.recv(body, contentLength);
   
   cout << "got the body: " << '\n' << body << '\n';
+
 }
 
 int main(int, char **) {
   auto io = getService();
-  spawn(*io, doWork);
+  spawn(*io, [](yield_context yield) {
+    doWork(yield, Connection("httpbin.org", "http", yield));
+  });
+  spawn(*io, [](yield_context yield) {
+    doWork(yield, Connection("httpbin.org", "https", yield, true));
+  });
   io->run();
   return 0;
 }
