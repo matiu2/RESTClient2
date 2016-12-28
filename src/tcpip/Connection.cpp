@@ -48,7 +48,7 @@ public:
 
   void recv(std::string &data, size_t size) { 
     SpyRange fromNet = spy(size);
-    assert(fromNet.size() > size);
+    assert(fromNet.size() >= size);
     data.reserve(data.size() + size);
     std::copy(fromNet.begin(), fromNet.begin() + size,
               std::back_inserter(data));
@@ -58,11 +58,11 @@ public:
   void recv(std::string &out, char delim) {
     // Copy whatever we have in the buffer to out
     auto range = spy('\n');
-    auto found = std::find(range.begin(), range.end(), delim);
+    auto found = std::find(range.begin(), range.end(), delim) + 1;
     auto sz = std::distance(range.begin(), found);
     out.reserve(out.size() + sz);
     std::copy(range.begin(), found, std::back_inserter(out));
-    consume(sz + 1);
+    consume(sz);
   }
 
   Connection::SpyRange spy(size_t size) {
