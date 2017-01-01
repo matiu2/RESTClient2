@@ -42,7 +42,7 @@ int main(int, char**) {
     cout << name << ": " << val << " - expected: " << expected << '\n';
   };
 
-  check("Parsed url", url.original(), str);
+  check("Parsed url", url.whole(), str);
   check("Protocol", url.protocol, "http");
   check("Hostname", url.hostname, "something.com");
   check("Path", url.path, "");
@@ -54,7 +54,7 @@ int main(int, char**) {
   str = "https://more.secure.com/";
   url = str;
 
-  check("Parsed url", url.original(), str);
+  check("Parsed url", url.whole(), str);
   check("Protocol", url.protocol, "https");
   check("Hostname", url.hostname, "more.secure.com");
   check("Path", url.path, "/");
@@ -66,7 +66,7 @@ int main(int, char**) {
   str = "https://more.secure.com:8011/";
   url = str;
 
-  check("Parsed url", url.original(), str);
+  check("Parsed url", url.whole(), str);
   check("Protocol", url.protocol, "https");
   check("Hostname", url.hostname, "more.secure.com");
   check("Path", url.path, "/");
@@ -78,7 +78,7 @@ int main(int, char**) {
   str = "https://more.secure.com:8011/some/path/to/somewhere";
   url = str;
 
-  check("Parsed url", url.original(), str);
+  check("Parsed url", url.whole(), str);
   check("Protocol", url.protocol, "https");
   check("Hostname", url.hostname, "more.secure.com");
   check("Path", url.path, "/some/path/to/somewhere");
@@ -90,7 +90,7 @@ int main(int, char**) {
   str = "https://more.secure.com:8011/some/path/to/somewhere?a=b&b=c";
   url = str;
 
-  check("Parsed url", url.original(), str);
+  check("Parsed url", url.whole(), str);
   check("Protocol", url.protocol, "https");
   check("Hostname", url.hostname, "more.secure.com");
   check("Path", url.path, "/some/path/to/somewhere");
@@ -105,7 +105,7 @@ int main(int, char**) {
   str = "https://more.secure.com:8011?a=b&b=c";
   url = str;
 
-  check("Parsed url", url.original(), str);
+  check("Parsed url", url.whole(), str);
   check("Protocol", url.protocol, "https");
   check("Hostname", url.hostname, "more.secure.com");
   check("Path", url.path, "");
@@ -120,7 +120,7 @@ int main(int, char**) {
   str = "https://more.secure.com?a=b&b=c";
   url = str;
 
-  check("Parsed url", url.original(), str);
+  check("Parsed url", url.whole(), str);
   check("Protocol", url.protocol, "https");
   check("Hostname", url.hostname, "more.secure.com");
   check("Path", url.path, "");
@@ -138,7 +138,7 @@ int main(int, char**) {
   str = "https://more.secure.com/has/a/path/?a=b&b=c";
   url = str;
 
-  check("Parsed url", url.original(), str);
+  check("Parsed url", url.whole(), str);
   check("Protocol", url.protocol, "https");
   check("Hostname", url.hostname, "more.secure.com");
   check("Path", url.path, "/has/a/path/");
@@ -153,7 +153,7 @@ int main(int, char**) {
   str = "https://more.secure.com/has/a/path/?apple=oranges";
   url = str;
 
-  check("Parsed url", url.original(), str);
+  check("Parsed url", url.whole(), str);
   check("Protocol", url.protocol, "https");
   check("Hostname", url.hostname, "more.secure.com");
   check("Path", url.path, "/has/a/path/");

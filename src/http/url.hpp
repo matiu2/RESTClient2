@@ -8,12 +8,16 @@ namespace http {
     
 struct URL {
   std::string protocol;
+  std::string username;
+  std::string password;
   std::string hostname;
   unsigned short port;
   std::string path;
   std::map<std::string, std::string> params;
   URL(std::string url);
-  std::string original() const;
+  std::string whole() const;
+  /// Returns just the host part: eg. http://some-domain.com:2020
+  std::string host_part() const;
   URL& operator =(const std::string& url);
 };
   

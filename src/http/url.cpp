@@ -3,7 +3,8 @@
 #include <boost/spirit/home/x3.hpp>
 #include <sstream>
 #include <boost/range/iterator_range.hpp>
-
+#include <boost/fusion/include/vector.hpp>
+#include <boost/fusion/include/vector_tie.hpp>
 
 namespace url_parser {
 
@@ -11,6 +12,9 @@ using namespace boost::spirit::x3;
 
 auto protocol = (string("https") >> "://") | (string("http") >> "://");
 auto hostname = +(char_ - (lit(':') | '?' | '/' | eoi));
+auto password = +(char_ - lit('@')) >> lit('@');
+auto user_pass = +(char_ - (lit(':') | '@' | '?' | '/' | eoi)) >>
+                 (lit('@') | (':' >> password));
 auto port = lit(':') >> ushort_;
 auto path = +(char_ - (lit('?') | eoi));
 auto key = +(char_ - lit('=')) >> lit('=');
@@ -37,6 +41,11 @@ void assignURL(URL& destination, const std::string& url) {
         << " in url: " << url;
     throw std::runtime_error(msg.str());
   }
+  // Parse the username and password
+  auto user_pass = boost::fusion::vector_tie(destination.username, destination.password);
+  phrase_parse(i, end, url_parser::user_pass, url_parser::spacer,
+                    user_pass);
+
   // Parse the hostname
   ok = phrase_parse(i, end, url_parser::hostname, url_parser::spacer,
                     destination.hostname);
@@ -106,7 +115,17 @@ URL &URL::operator=(const std::string &url) {
   return *this;
 }
 
-std::string URL::original() const {
+std::string URL::host_part() const {
+  std::stringstream out;
+  out << protocol << "://" << hostname;
+  if (((protocol == "http") && (port != 80)) ||
+      ((protocol == "https") && (port != 443))) {
+    out << ':' << port;
+  }
+  return out.str();
+}
+
+std::string URL::whole() const {
   std::stringstream out;
   out << protocol << "://" << hostname;
   if (((protocol == "http") && (port != 80)) ||
