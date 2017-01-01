@@ -14,6 +14,7 @@ struct URL {
   std::map<std::string, std::string> params;
   URL(std::string url);
   std::string original() const;
+  URL& operator =(const std::string& url);
 };
   
 } /* http */ 

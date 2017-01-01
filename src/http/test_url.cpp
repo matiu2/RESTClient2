@@ -27,8 +27,8 @@ using namespace RESTClient::http;
 
 int main(int, char**) {
 
-  std::string url("http://something.com");
-  URL easy(url);
+  std::string str("http://something.com");
+  URL url(str);
 
   int returnVal = 0;
 
@@ -41,11 +41,65 @@ int main(int, char**) {
     ++returnVal;
   };
 
-  check("Parsed url", easy.original(), url);
-  check("Protocol", easy.protocol, "http");
-  check("Hostname", easy.hostname, "something.com");
-  check("Path", easy.path, "/");
-  check("Port", easy.port, 80);
+  check("Parsed url", url.original(), str);
+  check("Protocol", url.protocol, "http");
+  check("Hostname", url.hostname, "something.com");
+  check("Path", url.path, "");
+  check("Port", url.port, 80);
 
-  return 0;
+  cout << '\n' << "================================================================================" << '\n';
+
+  // New URL
+  str = "https://more.secure.com/";
+  url = str;
+
+  check("Parsed url", url.original(), str);
+  check("Protocol", url.protocol, "https");
+  check("Hostname", url.hostname, "more.secure.com");
+  check("Path", url.path, "/");
+  check("Port", url.port, 443);
+
+  cout << '\n' << "================================================================================" << '\n';
+
+  // Custom port
+  str = "https://more.secure.com:8011/";
+  url = str;
+
+  check("Parsed url", url.original(), str);
+  check("Protocol", url.protocol, "https");
+  check("Hostname", url.hostname, "more.secure.com");
+  check("Path", url.path, "/");
+  check("Port", url.port, 8011);
+
+  cout << '\n' << "================================================================================" << '\n';
+
+  // Add a path
+  str = "https://more.secure.com:8011/some/path/to/somewhere";
+  url = str;
+
+  check("Parsed url", url.original(), str);
+  check("Protocol", url.protocol, "https");
+  check("Hostname", url.hostname, "more.secure.com");
+  check("Path", url.path, "/some/path/to/somewhere");
+  check("Port", url.port, 8011);
+
+  cout << '\n' << "================================================================================" << '\n';
+
+  // Add some params
+  str = "https://more.secure.com:8011/some/path/to/somewhere?a=b&b=c";
+  url = str;
+
+  check("Parsed url", url.original(), str);
+  check("Protocol", url.protocol, "https");
+  check("Hostname", url.hostname, "more.secure.com");
+  check("Path", url.path, "/some/path/to/somewhere");
+  check("Port", url.port, 8011);
+  check("Param Length", url.params.size(), 2);
+  check("Param a", url.params["a"], "b");
+  check("Param b", url.params["b"], "c");
+  for (const auto& pair : url.params) {
+    cout << pair.first << " = " << pair.second << "\n";
+  }
+
+  return returnVal;
 }
