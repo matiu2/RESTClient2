@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
                             auto &&expected) {
     cout << RESET;
     if (val != expected) {
-      cout << BOLDRED;
+      cout << BOLDRED << "ERROR: ";
       ++returnVal;
     }
     cout << name << ": " << val << " - expected: " << expected << '\n';
@@ -56,6 +56,7 @@ int main(int argc, char** argv) {
       {"http://something.com",
        [&](URL&& url, const std::string &str) {
          check("Parsed url", url.whole(), str);
+         check("Host Part", url.host_part(), "http://something.com");
          check("Protocol", url.protocol, "http");
          check("Username", url.username, "");
          check("Password", url.password, "");
@@ -66,6 +67,7 @@ int main(int argc, char** argv) {
       {"https://more.secure.com/",
        [&](URL&& url, const std::string &str) {
          check("Parsed url", url.whole(), str);
+         check("Host Part", url.host_part(), "https://more.secure.com");
          check("Protocol", url.protocol, "https");
          check("Username", url.username, "");
          check("Password", url.password, "");
@@ -76,6 +78,7 @@ int main(int argc, char** argv) {
       {"https://more.secure.com:8011/",
        [&](URL&& url, const std::string &str) {
          check("Parsed url", url.whole(), str);
+         check("Host Part", url.host_part(), "https://more.secure.com:8011");
          check("Protocol", url.protocol, "https");
          check("Username", url.username, "");
          check("Password", url.password, "");
@@ -86,6 +89,7 @@ int main(int argc, char** argv) {
       {"https://more.secure.com:8011/some/path/to/somewhere",
        [&](URL&& url, const std::string &str) {
          check("Parsed url", url.whole(), str);
+         check("Host Part", url.host_part(), "https://more.secure.com:8011");
          check("Protocol", url.protocol, "https");
          check("Username", url.username, "");
          check("Password", url.password, "");
@@ -96,6 +100,7 @@ int main(int argc, char** argv) {
       {"https://more.secure.com:8011/some/path/to/somewhere?a=b&b=c",
        [&](URL&& url, const std::string &str) {
          check("Parsed url", url.whole(), str);
+         check("Host Part", url.host_part(), "https://more.secure.com:8011");
          check("Protocol", url.protocol, "https");
          check("Username", url.username, "");
          check("Password", url.password, "");
@@ -110,6 +115,7 @@ int main(int argc, char** argv) {
       {"https://more.secure.com:8011?a=b&b=c",
        [&](URL&& url, const std::string &str) {
          check("Parsed url", url.whole(), str);
+         check("Host Part", url.host_part(), "https://more.secure.com:8011");
          check("Protocol", url.protocol, "https");
          check("Username", url.username, "");
          check("Password", url.password, "");
@@ -123,6 +129,7 @@ int main(int argc, char** argv) {
       {"https://more.secure.com?a=b&b=c",
        [&](URL&& url, const std::string &str) {
          check("Parsed url", url.whole(), str);
+         check("Host Part", url.host_part(), "https://more.secure.com");
          check("Protocol", url.protocol, "https");
          check("Username", url.username, "");
          check("Password", url.password, "");
@@ -136,6 +143,7 @@ int main(int argc, char** argv) {
       {"https://more.secure.com/has/a/path/?a=b&b=c",
        [&](URL&& url, const std::string &str) {
          check("Parsed url", url.whole(), str);
+         check("Host Part", url.host_part(), "https://more.secure.com");
          check("Protocol", url.protocol, "https");
          check("Username", url.username, "");
          check("Password", url.password, "");
@@ -149,6 +157,7 @@ int main(int argc, char** argv) {
       {"https://more.secure.com/has/a/path/?apple=oranges",
        [&](URL&& url, const std::string &str) {
          check("Parsed url", url.whole(), str);
+         check("Host Part", url.host_part(), "https://more.secure.com");
          check("Protocol", url.protocol, "https");
          check("Username", url.username, "");
          check("Password", url.password, "");
@@ -161,6 +170,7 @@ int main(int argc, char** argv) {
       {"https://username@more.secure.com/has/a/path/?apple=oranges",
        [&](URL&& url, const std::string &str) {
          check("Parsed url", url.whole(), str);
+         check("Host Part", url.host_part(), "https://more.secure.com");
          check("Protocol", url.protocol, "https");
          check("Username", url.username, "username");
          check("Password", url.password, "");
@@ -174,6 +184,7 @@ int main(int argc, char** argv) {
        "?apple=oranges",
        [&](URL&& url, const std::string &str) {
          check("Parsed url", url.whole(), str);
+         check("Host Part", url.host_part(), "https://more.secure.com:2020");
          check("Protocol", url.protocol, "https");
          check("Username", url.username, "username");
          check("Password", url.password, "password");
@@ -186,6 +197,7 @@ int main(int argc, char** argv) {
       {"https://username@more.secure.com:2020/?apple=oranges",
        [&](URL&& url, const std::string &str) {
          check("Parsed url", url.whole(), str);
+         check("Host Part", url.host_part(), "https://more.secure.com:2020");
          check("Protocol", url.protocol, "https");
          check("Username", url.username, "username");
          check("Password", url.password, "");
