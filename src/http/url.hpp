@@ -20,6 +20,7 @@ struct URL {
   /// Returns just the host part: eg. http://some-domain.com:2020
   std::string host_part() const;
   URL& operator =(const std::string& url);
+  bool is_ssl() const { return protocol == "https"; }
 };
   
 } /* http */ 

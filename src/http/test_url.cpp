@@ -57,6 +57,7 @@ int main(int argc, char** argv) {
        [&](URL&& url, const std::string &str) {
          check("Parsed url", url.whole(), str);
          check("Host Part", url.host_part(), "http://something.com");
+         check("is_ssl", url.is_ssl(), false);
          check("Protocol", url.protocol, "http");
          check("Username", url.username, "");
          check("Password", url.password, "");
@@ -68,6 +69,7 @@ int main(int argc, char** argv) {
        [&](URL&& url, const std::string &str) {
          check("Parsed url", url.whole(), str);
          check("Host Part", url.host_part(), "https://more.secure.com");
+         check("is_ssl", url.is_ssl(), true);
          check("Protocol", url.protocol, "https");
          check("Username", url.username, "");
          check("Password", url.password, "");
@@ -79,6 +81,7 @@ int main(int argc, char** argv) {
        [&](URL&& url, const std::string &str) {
          check("Parsed url", url.whole(), str);
          check("Host Part", url.host_part(), "https://more.secure.com:8011");
+         check("is_ssl", url.is_ssl(), true);
          check("Protocol", url.protocol, "https");
          check("Username", url.username, "");
          check("Password", url.password, "");
@@ -90,6 +93,7 @@ int main(int argc, char** argv) {
        [&](URL&& url, const std::string &str) {
          check("Parsed url", url.whole(), str);
          check("Host Part", url.host_part(), "https://more.secure.com:8011");
+         check("is_ssl", url.is_ssl(), true);
          check("Protocol", url.protocol, "https");
          check("Username", url.username, "");
          check("Password", url.password, "");
@@ -101,6 +105,7 @@ int main(int argc, char** argv) {
        [&](URL&& url, const std::string &str) {
          check("Parsed url", url.whole(), str);
          check("Host Part", url.host_part(), "https://more.secure.com:8011");
+         check("is_ssl", url.is_ssl(), true);
          check("Protocol", url.protocol, "https");
          check("Username", url.username, "");
          check("Password", url.password, "");
@@ -116,6 +121,7 @@ int main(int argc, char** argv) {
        [&](URL&& url, const std::string &str) {
          check("Parsed url", url.whole(), str);
          check("Host Part", url.host_part(), "https://more.secure.com:8011");
+         check("is_ssl", url.is_ssl(), true);
          check("Protocol", url.protocol, "https");
          check("Username", url.username, "");
          check("Password", url.password, "");
@@ -130,6 +136,7 @@ int main(int argc, char** argv) {
        [&](URL&& url, const std::string &str) {
          check("Parsed url", url.whole(), str);
          check("Host Part", url.host_part(), "https://more.secure.com");
+         check("is_ssl", url.is_ssl(), true);
          check("Protocol", url.protocol, "https");
          check("Username", url.username, "");
          check("Password", url.password, "");
@@ -144,6 +151,7 @@ int main(int argc, char** argv) {
        [&](URL&& url, const std::string &str) {
          check("Parsed url", url.whole(), str);
          check("Host Part", url.host_part(), "https://more.secure.com");
+         check("is_ssl", url.is_ssl(), true);
          check("Protocol", url.protocol, "https");
          check("Username", url.username, "");
          check("Password", url.password, "");
@@ -158,6 +166,7 @@ int main(int argc, char** argv) {
        [&](URL&& url, const std::string &str) {
          check("Parsed url", url.whole(), str);
          check("Host Part", url.host_part(), "https://more.secure.com");
+         check("is_ssl", url.is_ssl(), true);
          check("Protocol", url.protocol, "https");
          check("Username", url.username, "");
          check("Password", url.password, "");
@@ -171,6 +180,7 @@ int main(int argc, char** argv) {
        [&](URL&& url, const std::string &str) {
          check("Parsed url", url.whole(), str);
          check("Host Part", url.host_part(), "https://more.secure.com");
+         check("is_ssl", url.is_ssl(), true);
          check("Protocol", url.protocol, "https");
          check("Username", url.username, "username");
          check("Password", url.password, "");
@@ -185,6 +195,7 @@ int main(int argc, char** argv) {
        [&](URL&& url, const std::string &str) {
          check("Parsed url", url.whole(), str);
          check("Host Part", url.host_part(), "https://more.secure.com:2020");
+         check("is_ssl", url.is_ssl(), true);
          check("Protocol", url.protocol, "https");
          check("Username", url.username, "username");
          check("Password", url.password, "password");
@@ -198,6 +209,7 @@ int main(int argc, char** argv) {
        [&](URL&& url, const std::string &str) {
          check("Parsed url", url.whole(), str);
          check("Host Part", url.host_part(), "https://more.secure.com:2020");
+         check("is_ssl", url.is_ssl(), true);
          check("Protocol", url.protocol, "https");
          check("Username", url.username, "username");
          check("Password", url.password, "");
