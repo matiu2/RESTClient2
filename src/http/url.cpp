@@ -12,7 +12,7 @@ using namespace boost::spirit::x3;
 
 auto protocol = (string("https") >> "://") | (string("http") >> "://");
 auto hostname = +(char_ - (lit(':') | '?' | '/' | eoi));
-auto password = +(char_ - lit('@')) >> lit('@');
+auto password = +(char_ - (lit('@') | '?' | '/' | eoi)) >> lit('@');
 auto user_pass = +(char_ - (lit(':') | '@' | '?' | '/' | eoi)) >>
                  (lit('@') | (':' >> password));
 auto port = lit(':') >> ushort_;
@@ -43,8 +43,14 @@ void assignURL(URL& destination, const std::string& url) {
   }
   // Parse the username and password
   auto user_pass = boost::fusion::vector_tie(destination.username, destination.password);
-  phrase_parse(i, end, url_parser::user_pass, url_parser::spacer,
+  ok = phrase_parse(i, end, url_parser::user_pass, url_parser::spacer,
                     user_pass);
+  if (!ok) {
+    // Because it actually parses whatever it finds into the destination straight away,
+    // if it fails, we have to wipe it out
+    destination.username.clear();
+    destination.password.clear();
+  }
 
   // Parse the hostname
   ok = phrase_parse(i, end, url_parser::hostname, url_parser::spacer,
@@ -127,7 +133,17 @@ std::string URL::host_part() const {
 
 std::string URL::whole() const {
   std::stringstream out;
-  out << protocol << "://" << hostname;
+  // Protocol
+  out << protocol << "://";
+  // username ?
+  if (!username.empty()) {
+    out << username;
+    if (!password.empty())
+      out << ':' << password;
+    out << '@';
+  }
+  // hostname
+  out << hostname;
   if (((protocol == "http") && (port != 80)) ||
       ((protocol == "https") && (port != 443))) {
     out << ':' << port;
