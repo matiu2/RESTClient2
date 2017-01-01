@@ -35,10 +35,11 @@ int main(int, char**) {
   auto check = [&returnVal](const char *name, const auto &val,
                             auto &&expected) {
     cout << RESET;
-    if (val != expected)
+    if (val != expected) {
       cout << BOLDRED;
+      ++returnVal;
+    }
     cout << name << ": " << val << " - expected: " << expected << '\n';
-    ++returnVal;
   };
 
   check("Parsed url", url.original(), str);
@@ -97,9 +98,68 @@ int main(int, char**) {
   check("Param Length", url.params.size(), 2);
   check("Param a", url.params["a"], "b");
   check("Param b", url.params["b"], "c");
+
+  cout << '\n' << "================================================================================" << '\n';
+
+  // Now take away the path
+  str = "https://more.secure.com:8011?a=b&b=c";
+  url = str;
+
+  check("Parsed url", url.original(), str);
+  check("Protocol", url.protocol, "https");
+  check("Hostname", url.hostname, "more.secure.com");
+  check("Path", url.path, "");
+  check("Port", url.port, 8011);
+  check("Param Length", url.params.size(), 2);
+  check("Param a", url.params["a"], "b");
+  check("Param b", url.params["b"], "c");
+
+  cout << '\n' << "================================================================================" << '\n';
+
+  // Now take away the port
+  str = "https://more.secure.com?a=b&b=c";
+  url = str;
+
+  check("Parsed url", url.original(), str);
+  check("Protocol", url.protocol, "https");
+  check("Hostname", url.hostname, "more.secure.com");
+  check("Path", url.path, "");
+  check("Port", url.port, 443);
+  check("Param Length", url.params.size(), 2);
+  check("Param a", url.params["a"], "b");
+  check("Param b", url.params["b"], "c");
   for (const auto& pair : url.params) {
     cout << pair.first << " = " << pair.second << "\n";
   }
+
+  cout << '\n' << "================================================================================" << '\n';
+
+  // Now put the path back
+  str = "https://more.secure.com/has/a/path/?a=b&b=c";
+  url = str;
+
+  check("Parsed url", url.original(), str);
+  check("Protocol", url.protocol, "https");
+  check("Hostname", url.hostname, "more.secure.com");
+  check("Path", url.path, "/has/a/path/");
+  check("Port", url.port, 443);
+  check("Param Length", url.params.size(), 2);
+  check("Param a", url.params["a"], "b");
+  check("Param b", url.params["b"], "c");
+
+  cout << '\n' << "================================================================================" << '\n';
+
+  // Try with a single param
+  str = "https://more.secure.com/has/a/path/?apple=oranges";
+  url = str;
+
+  check("Parsed url", url.original(), str);
+  check("Protocol", url.protocol, "https");
+  check("Hostname", url.hostname, "more.secure.com");
+  check("Path", url.path, "/has/a/path/");
+  check("Port", url.port, 443);
+  check("Param Length", url.params.size(), 1);
+  check("Param apple", url.params["apple"], "oranges");
 
   return returnVal;
 }

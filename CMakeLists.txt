@@ -3,6 +3,10 @@ cmake_minimum_required(VERSION 3.7)
 project(RESTClient)
 
 option(IS_CLANG "Are we using the clang compiler?" ON)
+option(ENABLE_TESTS "Enable building and running of tests?" ON)
+if (ENABLE_TESTS)
+  enable_testing()
+endif()
  
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -fstandalone-debug -fwritable-strings -fno-builtin"
       CACHE STRING "Flags used by the compiler during debug builds." FORCE)
@@ -19,3 +23,4 @@ add_definitions(-DBOOST_COROUTINE_NO_DEPRECATION_WARNING)
 include(cmake/dependencies.cmake)
 
 add_subdirectory(src)
+
