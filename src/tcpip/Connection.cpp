@@ -27,7 +27,6 @@ struct SSL {
   SSL(tcp::socket &sock) : ctx(ssl::context::tlsv12), s(sock, ctx) {}
 };
 
-
 class Connection::impl {
 public:
   std::shared_ptr<io_service> io;
@@ -110,25 +109,36 @@ public:
   }
 
   void recv(std::string &data, size_t size) { 
-    SpyRange fromNet = spy(size);
-    assert(fromNet.size() >= size);
+    SpyGuard fromNet = spy(size);
+    assert(fromNet.size() == size);
     data.reserve(data.size() + size);
     std::copy(fromNet.begin(), fromNet.begin() + size,
               std::back_inserter(data));
-    consume(size);
   }
 
   void recv(std::string &out, char delim) {
     // Copy whatever we have in the buffer to out
-    auto range = spy('\n');
-    auto found = std::find(range.begin(), range.end(), delim) + 1;
-    auto sz = std::distance(range.begin(), found);
+    SpyGuard buf = spy('\n');
+    auto found = std::find(buf.begin(), buf.end(), delim) + 1;
+    auto sz = std::distance(buf.begin(), found);
     out.reserve(out.size() + sz);
-    std::copy(range.begin(), found, std::back_inserter(out));
-    consume(sz);
+    std::copy(buf.begin(), found, std::back_inserter(out));
   }
 
-  Connection::SpyRange spy(size_t size) {
+  /// Recieve 'n' bytes into a stream
+  void recv(std::ostream &data, size_t size) {
+    SpyGuard buf = spy(size);
+    std::copy(buf.begin(), buf.end(), std::ostream_iterator<char>(data));
+  }
+
+  SpyGuard spyGuard(Connection::SpyRange::iterator begin,
+                    Connection::SpyRange::iterator end) {
+    using namespace std::placeholders;
+    return SpyGuard([this](size_t size) { this->consume(size); },
+                    Connection::SpyRange(begin, end));
+  }
+
+  SpyGuard spy(size_t size) {
     size_t startingSize = _buf.size();
     size_t toGet = (startingSize < size) ? size - startingSize : 0;
     if (ssl)
@@ -137,10 +147,11 @@ public:
       asio::async_read(socket, _buf, asio::transfer_at_least(toGet), yield);
     assert(_buf.size() >= size);
     const auto &buffers = _buf.data();
-    return SpyRange(asio::buffers_begin(buffers), asio::buffers_end(buffers));
+    auto begin = asio::buffers_begin(buffers);
+    return spyGuard(begin, begin+size);
   }
 
-  Connection::SpyRange spy(char delim) {
+  SpyGuard spy(char delim) {
     if (_buf.size() == 0) {
       if (ssl) {
         asio::async_read_until(ssl->s, _buf, delim, yield);
@@ -151,11 +162,12 @@ public:
     while (true) {
       // First check if we already have it in the buffer from previous reads
       // before trying to read it
+      // TODO: maybe we don't need to get the start every time; just the end
       auto in = asio::buffers_begin(_buf.data());
       auto eos = asio::buffers_end(_buf.data());
       auto found = std::find(in, eos, delim);
       if (found != eos)
-        break;
+        return spyGuard(in, found + 1);
       // The current buffer doesn't contain 'delim'.
       // We need to read more data from the net.
       // TODO: Maybe we need to specify a timeout and catch timeout errors here ..
@@ -163,6 +175,16 @@ public:
         asio::async_read_until(ssl->s, _buf, delim, yield);
       } else {
         asio::async_read_until(socket, _buf, delim, yield);
+      }
+    }
+  }
+
+  Connection::SpyRange spyAvailable() {
+    if (_buf.size() == 0) {
+      if (ssl) {
+        asio::async_read(ssl->s, _buf, boost::asio::transfer_at_least(1), yield);
+      } else {
+        asio::async_read(socket, _buf, boost::asio::transfer_at_least(1), yield);
       }
     }
     const auto &buffers = _buf.data();
@@ -184,8 +206,9 @@ void Connection::send(const std::string &data) { m->send(std::move(data)); }
 
 void Connection::recv(std::string &data, size_t size) { m->recv(data, size); }
 void Connection::recv(std::string &data, char delim) { m->recv(data, delim); }
-Connection::SpyRange Connection::spy(char delim) { return m->spy(delim); }
-Connection::SpyRange Connection::spy(size_t size) { return m->spy(size); }
+void Connection::recv(std::ostream &data, size_t size) { m->recv(data, size); }
+SpyGuard Connection::spy(char delim) { return m->spy(delim); }
+SpyGuard Connection::spy(size_t size) { return m->spy(size); }
 void Connection::consume(size_t size) { m->consume(size); }
 
 } // tcpip

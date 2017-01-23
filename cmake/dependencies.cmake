@@ -8,16 +8,16 @@ find_package(Threads)
 FIND_PACKAGE(Boost 1.62 REQUIRED COMPONENTS system coroutine iostreams)
 include_directories(${OPENSSL_INCLUDE_DIR} ${OPENSSL_LIBRARIES})
 
-if (${BUILD_TESTS})
+if (${ENABLE_TESTS})
   FIND_PACKAGE(Boost 1.62 REQUIRED COMPONENTS regex)
-endif(${BUILD_TESTS})
+endif(${ENABLE_TESTS})
 
 # OpenSSL
 FIND_PACKAGE(OpenSSL REQUIRED)
 include_directories(${OPENSSL_INCLUDE_DIR} ${OPENSSL_LIBRARIES})
 
 # json_spirit - JSON wrapper
-if (${BUILD_TESTS} AND ${BUILD_RS_TESTS})
+if (${ENABLE_TESTS})
 
   include(ExternalProject)
 

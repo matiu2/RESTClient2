@@ -1,6 +1,7 @@
 project(http)
 
-add_library(http SHARED url.cpp Request.cpp ConnectionPool.cpp)
+add_library(http SHARED url.cpp Request.cpp ConnectionPool.cpp interface.cpp BodyDecoders.cpp ReadResponse.cpp interface.cpp)
+
 target_link_libraries(http tcpip ${CPP} ${Boost_SYSTEM_LIBRARY} ${Boost_COROUTINE_LIBRARY} ${OPENSSL_LIBRARIES})
 
 if (ENABLE_TESTS)

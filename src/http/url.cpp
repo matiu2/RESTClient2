@@ -131,6 +131,27 @@ std::string URL::host_part() const {
   return out.str();
 }
 
+void getPathPart(const URL& url, std::stringstream& out) {
+  out << url.path;
+  if (!url.params.empty()) {
+    out << '?';
+    auto i = url.params.cbegin();
+    auto end = url.params.cend();
+    --end;
+    while (i != end) {
+      out << i->first << '=' << i->second << '&';
+      ++i;
+    }
+    out << i->first << '=' << i->second;
+  }
+}
+
+std::string URL::path_part() const {
+  std::stringstream out;
+  getPathPart(*this, out);
+  return out.str();
+}
+
 std::string URL::whole() const {
   std::stringstream out;
   // Protocol
@@ -148,18 +169,8 @@ std::string URL::whole() const {
       ((protocol == "https") && (port != 443))) {
     out << ':' << port;
   }
-  out << path;
-  if (!params.empty()) {
-    out << '?';
-    auto i = params.cbegin();
-    auto end = params.cend();
-    --end;
-    while (i != end) {
-      out << i->first << '=' << i->second << '&';
-      ++i;
-    }
-    out << i->first << '=' << i->second;
-  }
+  // The path and params
+  getPathPart(*this, out);
   return out.str();
 }
 
