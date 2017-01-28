@@ -58,7 +58,6 @@ boost::optional<size_t> checkForContentLength(const Headers *defaultHeaders,
 };
 
 Response Request::go(yield_context yield) const {
-  Response result;
   // Get a TCP/IP connection from the connection pool
   URL url(this->url);
   auto conn = getConnection(url.host_part(), yield);
@@ -116,7 +115,7 @@ Response Request::go(yield_context yield) const {
   Response response;
   readResponse(*conn, response);
 
-  return result;
+  return response;
 }
 
 } /* http */

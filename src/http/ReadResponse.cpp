@@ -5,13 +5,10 @@
 
 #include <string>
 #include <sstream>
-#include <iostream>
 
 #include <boost/fusion/include/vector.hpp>
 #include <boost/fusion/include/vector_tie.hpp>
 #include <boost/spirit/home/x3.hpp>
-
-#include <iostream>
 
 using namespace std::string_literals;
 
@@ -38,7 +35,7 @@ bool is_chunked(const Headers &headers) {
 
 size_t getContentLength(const Headers& headers) {
   auto found = headers.find("Content-Length");
-  if (found == headers.end())
+  if (found != headers.end())
     return std::stoul(found->second);
   // If there is no contentLength, the decoder shouldn't be calling this
   std::stringstream msg;
@@ -86,10 +83,6 @@ void readHeadersPart(tcpip::Connection &conn, Response &out) {
     auto line = conn.spy('\n');
     if (line == "\r\n")
       break;
-    using namespace std;
-    std::string temp;
-    std::copy(line.begin(), line.end(), std::back_inserter(temp));
-    cout << temp;
     bool ok = boost::spirit::x3::phrase_parse(line.begin(), line.end(),
                                               header_parser::header,
                                               header_parser::spacer, parsed);
