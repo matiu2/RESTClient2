@@ -76,7 +76,7 @@ void readHeadersPart(tcpip::Connection &conn, Response &out) {
     }
   }
 
-  // Read the first line
+  // Read the headers
   while (true) {
     std::string key, val;
     auto parsed = boost::fusion::vector_tie(key, val);

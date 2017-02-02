@@ -62,7 +62,7 @@ Response Request::go(yield_context yield) const {
   URL url(this->url);
   auto conn = getConnection(url.host_part(), yield);
   // Send the request line
-  conn->send("GET ");
+  conn->send(_verb + ' ');
   conn->send(url.path_part());
   conn->send(" HTTP/1.1\r\n");
   // Send the Host header
