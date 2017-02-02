@@ -44,6 +44,21 @@ void post(yield_context yield) {
   cout << "POST Done\n";
 }
 
+void chunked_post(yield_context yield) {
+  std::string part("0123456789");
+  // When we send a stream without a content length it'll send it with a chunked transmit.
+  // It'll send it in 1024 byte chunks, so we'll make a 1500 byte body
+  std::stringstream body;
+  for (int i=0; i < 150; ++i)
+    body << part;
+  Response res = post("http://httpbin.org/post").body(body).go(yield);
+  using namespace std;
+  auto j = json::readValue(res.body.begin(), res.body.end());
+  assert(j["data"] == body.str());
+  cout << "Chunked POST Done\n";
+}
+
+
 int main(int, char **) {
   using namespace std;
   cout << "Starting..." << endl;
@@ -51,6 +66,7 @@ int main(int, char **) {
   spawn(::headers);
   spawn(::get_add_header);
   spawn(::post);
+  spawn(::chunked_post);
   run();
   return 0;
 }
