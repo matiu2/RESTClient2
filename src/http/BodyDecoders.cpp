@@ -54,6 +54,14 @@ void chunked(GetLine getLine, GetN<std::ostream> getN, std::ostream& out) {
   } while (chunkSize != 0);
 }
 
+void zipped(GetLine getLine, GetN<std::string> getN, std::string& out) {
+}
+
+void zipped(GetLine getLine, GetN<std::ostream> getN, std::ostream& out) {
+}
+
+
+
 } /* decoder  */ 
 } /* http  */ 
 } /* RESTClient  */ 

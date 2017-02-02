@@ -25,16 +25,24 @@ namespace RESTClient {
 namespace http {
 namespace decoder {
 
-/// A function that returns a line into a string
+/// Used to get a line the tcp/ip connection
 using GetLine = std::function<void(std::string&)>;
 
-/// A function to get n bytes into a string or stream
+/// Used to copy n bytes from the tcp/ip connection to a string or stream (T)
 template <typename T>
 using GetN = std::function<void(size_t, T&)>;
+
+/// Used to copy filter the content (for expample unzipping)
+template <typename InIter, typename OutIter>
+using Filter = std::function<void(InIter begin, InIter end, OutIter out)>;
+
 
 size_t readChunk(GetLine getLine, GetN<std::string> getN, std::string& out);
 void chunked(GetLine getLine, GetN<std::string> getN, std::string& out);
 void chunked(GetLine getLine, GetN<std::ostream> getN, std::ostream& out);
+
+void unzip(GetN<std::string> getN, std::string& out);
+void zipped(GetN<std::ostream> getN, std::ostream& out);
 
 } /* decoder  */ 
 } /* http  */ 

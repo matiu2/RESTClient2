@@ -23,4 +23,5 @@ add_definitions(-DBOOST_COROUTINE_NO_DEPRECATION_WARNING)
 include(cmake/dependencies.cmake)
 
 add_subdirectory(src)
+add_subdirectory(experiments)
 
