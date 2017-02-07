@@ -131,11 +131,10 @@ public:
     std::copy(buf.begin(), buf.end(), std::ostream_iterator<char>(data));
   }
 
-  SpyGuard spyGuard(Connection::SpyRange::iterator begin,
-                    Connection::SpyRange::iterator end) {
+  SpyGuard spyGuard(SpyRange::iterator begin, SpyRange::iterator end) {
     using namespace std::placeholders;
     return SpyGuard([this](size_t size) { this->consume(size); },
-                    Connection::SpyRange(begin, end));
+                    SpyRange(begin, end));
   }
 
   SpyGuard spy(size_t size) {
@@ -179,7 +178,7 @@ public:
     }
   }
 
-  Connection::SpyRange spyAvailable() {
+  SpyRange spyAvailable() {
     if (_buf.size() == 0) {
       if (ssl) {
         asio::async_read(ssl->s, _buf, boost::asio::transfer_at_least(1), yield);
