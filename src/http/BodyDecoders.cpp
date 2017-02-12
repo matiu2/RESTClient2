@@ -1,6 +1,7 @@
 #include "BodyDecoders.hpp"
 
 #include <boost/spirit/home/x3.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
 
 #include <unordered_map>
 #include <iterator>
@@ -17,21 +18,27 @@ namespace RESTClient {
 namespace http {
 namespace decoder {
 
-size_t getChunkSize(GetLine getLine)  {
+size_t getChunkSize(tcpip::SpyIterator& begin, SpyIterator end)  {
   size_t chunkSize;
-  std::string line;
-  getLine(line);
-  bool ok = boost::spirit::x3::phrase_parse(line.begin(), line.end(), body_parser::chunk_line, body_parser::space, chunkSize);
+  auto start = begin;
+  bool ok = boost::spirit::x3::phrase_parse(begin, end, body_parser::chunk_line,
+                                            body_parser::space, chunkSize);
   if (!ok) {
-    throw std::runtime_error("Couldn't parse chunk line: "s  + line);
+    std::string line;
+    std::copy(start, end, std::back_inserter(line));
+    throw std::runtime_error("Couldn't parse chunk line: "s + line);
   }
   return chunkSize;
 }
 
-size_t readChunk(GetLine getLine, GetN<std::string> getN, std::string &out, bool clear) {
-  size_t chunkSize = getChunkSize(getLine);
-  if (clear)
-    out.clear();
+/// Tries to copy 'n' bytes
+size_t copyn(tcpip::SpyIterator& in, tcpip::SpyIterator end, size_t n) {
+   
+}
+
+size_t readChunk(tcpip::SpyGuard &spyGuard, std::string &out) {
+  auto in = spyGuard.begin();
+  size_t chunkSize = getChunkSize(in, spyGuard.end());
   if (chunkSize != 0) {
     out.reserve(chunkSize);
     getN(chunkSize, out);
@@ -39,14 +46,17 @@ size_t readChunk(GetLine getLine, GetN<std::string> getN, std::string &out, bool
   return chunkSize;
 }
 
-void chunked(GetLine getLine, GetN<std::string> getN, std::string& out) {
+void getLine(tcpip::SpyGuard &guard) {
+}
+
+void chunked(GetSpyGuard getSpyGuard, std::string& out) {
   size_t chunkSize;
   do {
     chunkSize = readChunk(getLine, getN, out, false);
   } while (chunkSize != 0);
 }
 
-void chunked(GetLine getLine, GetN<std::ostream> getN, std::ostream& out) {
+void chunked(GetSpyGuard getSpyGuard, std::ostream& out) {
   size_t chunkSize;
   do {
     chunkSize = getChunkSize(getLine);

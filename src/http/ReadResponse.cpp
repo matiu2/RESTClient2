@@ -1,7 +1,8 @@
 #include "ReadResponse.hpp"
 
 #include "../tcpip/interface.hpp"
-#include "BodyDecoders.hpp"
+#include "io_source_tcpip.hpp"
+#include "io_source_chunked.hpp"
 
 #include <string>
 #include <sstream>
@@ -9,6 +10,9 @@
 #include <boost/fusion/include/vector.hpp>
 #include <boost/fusion/include/vector_tie.hpp>
 #include <boost/spirit/home/x3.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/filter/zlib.hpp>
 
 using namespace std::string_literals;
 
@@ -29,6 +33,14 @@ bool is_chunked(const Headers &headers) {
   auto found = headers.find("Transfer-Encoding");
   if (found == headers.end())
     return found->second == "chunked";
+  else
+    return false;
+}
+
+bool is_deflated(const Headers &headers) {
+  auto found = headers.find("Content-Encoding");
+  if (found == headers.end())
+    return found->second == "deflate";
   else
     return false;
 }
@@ -98,33 +110,48 @@ void readHeadersPart(tcpip::Connection &conn, Response &out) {
     encoding = found->second;
 }
 
-void readResponse(tcpip::Connection &conn, Response &out) {
-  readHeadersPart(conn, out);
-  // Now read the body
-  // We are saving to the string in the response
+io::filtering_istream&& getBodyStream(tcpip::Connection &conn, Response &out) {
+  io::filtering_istream bodyStream;
   // If we're reading the reply to a stream..
   if (is_chunked(out.headers)) {
-    auto readLine = [&conn](std::string &line) { conn.recv(line); };
-    auto readN = [&conn](size_t n, std::string &line) { conn.recv(line, n); };
-    decoder::chunked(readLine, readN, out.body);
+    auto spy = [&conn](auto x) { return std::move(conn.spy(x)); };
+    bodyStream.push(ChunkedSource(spy, spy));
   } else {
-    // Just recv the Content-Length to the body
     size_t len = getContentLength(out.headers);
-    conn.recv(out.body, len);
+    std::shared_ptr<tcpip::SpyGuard> guard(new tcpip::SpyGuard(std::move(conn.spy(len))));
+    bodyStream.push(TCPIPSource(guard));
   }
+
+  // Now see if it needs unzipping
+  auto found = out.headers.find("Content-Encoding");
+  if (found != out.headers.end()) {
+    if (found->second == "gzip")
+      bodyStream.push(io::gzip_decompressor());
+    else if (found->second == "deflate")
+      bodyStream.push(io::zlib_decompressor());
+    // TODO: what if it has some unknown encoding ? add more decoders ?
+  }
+
+  return std::move(bodyStream);
+}
+
+void readResponse(tcpip::Connection &conn, Response &out) {
+  readHeadersPart(conn, out);
+
+  io::filtering_istream&& bodyStream(getBodyStream(conn, out));
+
+  // Now copy the de-chunked and unzipped data to the usable body
+  std::copy(std::istream_iterator<char>(bodyStream),
+            std::istream_iterator<char>(), std::back_inserter(out.body));
 }
 
 void readResponse(tcpip::Connection &conn, Response &out, std::ostream &body) {
   readHeadersPart(conn, out);
-  // Now read the body
-  // If we're reading the reply to a stream..
-  if (is_chunked(out.headers)) {
-    auto readLine = [&conn](std::string &line) { conn.recv(line); };
-    auto readN = [&conn](size_t n, std::ostream &line) { conn.recv(line, n); };
-    decoder::chunked(readLine, readN, body);
-  } else {
-    conn.recv(body, getContentLength(out.headers));
-  }
+  io::filtering_istream&&  bodyStream(getBodyStream(conn, out));
+
+  // Now copy the de-chunked and unzipped data to the usable body
+  std::copy(std::istream_iterator<char>(bodyStream),
+            std::istream_iterator<char>(), std::ostream_iterator<char>(body));
 }
 
 } /* http */

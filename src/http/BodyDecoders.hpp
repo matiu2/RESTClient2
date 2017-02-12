@@ -21,20 +21,16 @@
 #include <string>
 #include <functional>
 
+#include "../tcpip/SpyGuard.hpp"
+
 namespace RESTClient {
 namespace http {
 namespace decoder {
 
-/// A function that returns a line into a string
-using GetLine = std::function<void(std::string&)>;
+using GetSpyGuard = std::function<tcpip::SpyGuard()>;
 
-/// A function to get n bytes into a string or stream
-template <typename T>
-using GetN = std::function<void(size_t, T&)>;
-
-size_t readChunk(GetLine getLine, GetN<std::string> getN, std::string& out);
-void chunked(GetLine getLine, GetN<std::string> getN, std::string& out);
-void chunked(GetLine getLine, GetN<std::ostream> getN, std::ostream& out);
+void chunked(GetSpyGuard getSpyGuard, std::string& out);
+void chunked(GetSpyGuard getSpyGuard, std::ostream& out);
 
 } /* decoder  */ 
 } /* http  */ 

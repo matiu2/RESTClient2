@@ -63,10 +63,10 @@ int main(int, char **) {
   using namespace std;
   cout << "Starting..." << endl;
   spawn(::get);
-  spawn(::headers);
-  spawn(::get_add_header);
-  spawn(::post);
-  spawn(::chunked_post);
+  //spawn(::headers);
+  //spawn(::get_add_header);
+  //spawn(::post);
+  //spawn(::chunked_post);
   run();
   return 0;
 }
