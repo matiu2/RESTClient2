@@ -12,5 +12,5 @@ if (ENABLE_TESTS)
 
   add_executable(test_request test_request.cpp)
   target_link_libraries(test_request http)
-  add_test(test_url test_url)
+  add_test(test_request test_request)
 endif()

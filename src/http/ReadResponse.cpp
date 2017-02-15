@@ -21,7 +21,8 @@ namespace header_parser {
 using namespace boost::spirit::x3;
 
 auto firstLine = lit("HTTP/1.1") >> ushort_ >> +(char_ - '\r') >> "\r\n";
-auto header = +(char_ - ':') >> ':' >> +(char_ - '\r') >> "\r\n";
+auto header =
+    lexeme[+(char_ - ':')] >> ':' >> lexeme[+(char_ - '\r')] >> "\r\n";
 auto spacer = (lit(' ') | lit('\t'));
 
 } /* header_parser */ 
@@ -103,6 +104,7 @@ void readHeadersPart(tcpip::Connection &conn, Response &out) {
     }
     out.headers.emplace(std::move(key), std::move(val));
   }
+
   // Now check what sort of body encoding we have
   auto found = out.headers.find("Transfer-Encoding");
   std::string encoding("identity");
@@ -110,16 +112,14 @@ void readHeadersPart(tcpip::Connection &conn, Response &out) {
     encoding = found->second;
 }
 
-io::filtering_istream&& getBodyStream(tcpip::Connection &conn, Response &out) {
-  io::filtering_istream bodyStream;
+void initBodyStream(tcpip::Connection &conn, Response &out, io::filtering_istream& bodyStream) {
   // If we're reading the reply to a stream..
   if (is_chunked(out.headers)) {
     auto spy = [&conn](auto x) { return std::move(conn.spy(x)); };
     bodyStream.push(ChunkedSource(spy, spy));
   } else {
     size_t len = getContentLength(out.headers);
-    std::shared_ptr<tcpip::SpyGuard> guard(new tcpip::SpyGuard(std::move(conn.spy(len))));
-    bodyStream.push(TCPIPSource(guard));
+    bodyStream.push(TCPIPSource(conn.spy(len)));
   }
 
   // Now see if it needs unzipping
@@ -131,23 +131,25 @@ io::filtering_istream&& getBodyStream(tcpip::Connection &conn, Response &out) {
       bodyStream.push(io::zlib_decompressor());
     // TODO: what if it has some unknown encoding ? add more decoders ?
   }
-
-  return std::move(bodyStream);
 }
 
 void readResponse(tcpip::Connection &conn, Response &out) {
   readHeadersPart(conn, out);
 
-  io::filtering_istream&& bodyStream(getBodyStream(conn, out));
+  io::filtering_istream bodyStream;
+  initBodyStream(conn, out, bodyStream);
 
   // Now copy the de-chunked and unzipped data to the usable body
+  std::noskipws(bodyStream);
   std::copy(std::istream_iterator<char>(bodyStream),
             std::istream_iterator<char>(), std::back_inserter(out.body));
+
 }
 
 void readResponse(tcpip::Connection &conn, Response &out, std::ostream &body) {
   readHeadersPart(conn, out);
-  io::filtering_istream&&  bodyStream(getBodyStream(conn, out));
+  io::filtering_istream bodyStream;
+  initBodyStream(conn, out, bodyStream);
 
   // Now copy the de-chunked and unzipped data to the usable body
   std::copy(std::istream_iterator<char>(bodyStream),

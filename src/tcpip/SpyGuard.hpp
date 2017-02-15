@@ -18,6 +18,7 @@ struct SpyGuard {
   using Consume = std::function<void(size_t)>;
   Consume consume;
   SpyRange buf;
+
   SpyGuard(Consume consume, SpyRange buf)
       : consume(consume), buf(buf) {}
   SpyGuard(const SpyGuard &) = delete;
@@ -41,6 +42,9 @@ struct SpyGuard {
   auto end() const { return buf.end(); }
   auto size() const { return buf.size(); }
   auto range() const { return buf; }
+  /// Return true if it has a usable buf
+  operator bool() const { return buf; }
+
 };
 
 /// Allows us to extend a string with a boost::iterator_range

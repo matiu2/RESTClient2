@@ -25,14 +25,13 @@ void ChunkedSource::getNextChunk() {
       throw std::runtime_error("Couldn't parse chunk line: "s + line);
     }
   }
+  assert(innards);
   if (chunkSize == 0) {
-    chunk.reset();
-    i.reset();
+    // No more data
+    innards.reset();
   } else {
-    std::shared_ptr<tcpip::SpyGuard> guard(
-        new tcpip::SpyGuard(spyN(chunkSize)));
-    chunk = guard;
-    i = chunk->begin();
+    // Get a new chunk
+    innards.reset(new Innards{spyN(chunkSize)});
   }
 }
 

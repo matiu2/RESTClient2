@@ -4,7 +4,6 @@
 #include <iosfwd>                          // streamsize
 #include <memory>
 #include <boost/iostreams/categories.hpp>  // source_tag
-#include <boost/optional.hpp>
 
 #include "../tcpip/SpyGuard.hpp"
 
@@ -26,10 +25,16 @@ public:
 
   SpyN spyN;
   SpyD spyD;
-  std::shared_ptr<tcpip::SpyGuard> chunk;
-  boost::optional<tcpip::SpyIterator> i;
 
-  ChunkedSource(SpyN spyN, SpyD spyD) : spyN(spyN), spyD(spyD) {
+  struct Innards {
+    tcpip::SpyGuard chunk;
+    tcpip::SpyIterator i = chunk.begin();
+  };
+
+  std::shared_ptr<Innards> innards;
+
+  ChunkedSource(SpyN spyN, SpyD spyD)
+      : spyN(spyN), spyD(spyD) {
     assert(spyN);
     assert(spyD);
   }
@@ -41,13 +46,17 @@ public:
     // Read up to n characters from the underlying data source
     // into the buffer s, returning the number of characters
     // read; return -1 to indicate EOF
-    if (!i)
+    if (!innards)
       getNextChunk();
-    if (!i)
+    // There is no more data
+    if (!innards)
       return -1;
-    size_t count=0;
-    for (count = 0; (count != n) && (*i != chunk->end()); ++count, ++s, ++(*i))
-      *s = *(*i);
+    // There is data, return as much data as we can
+    size_t count = 0;
+    auto &chunk = innards->chunk;
+    auto &i = innards->i;
+    for (count = 0; (count != n) && (i != chunk.end()); ++count, ++s, ++i)
+      *s = *i;
     return count;
   }
 };
