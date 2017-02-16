@@ -113,15 +113,6 @@ void readHeadersPart(tcpip::Connection &conn, Response &out) {
 }
 
 void initBodyStream(tcpip::Connection &conn, Response &out, io::filtering_istream& bodyStream) {
-  // If we're reading the reply to a stream..
-  if (is_chunked(out.headers)) {
-    auto spy = [&conn](auto x) { return std::move(conn.spy(x)); };
-    bodyStream.push(ChunkedSource(spy, spy));
-  } else {
-    size_t len = getContentLength(out.headers);
-    bodyStream.push(TCPIPSource(conn.spy(len)));
-  }
-
   // Now see if it needs unzipping
   auto found = out.headers.find("Content-Encoding");
   if (found != out.headers.end()) {
@@ -130,6 +121,15 @@ void initBodyStream(tcpip::Connection &conn, Response &out, io::filtering_istrea
     else if (found->second == "deflate")
       bodyStream.push(io::zlib_decompressor());
     // TODO: what if it has some unknown encoding ? add more decoders ?
+  }
+
+  // Now choose a source
+  if (is_chunked(out.headers)) {
+    auto spy = [&conn](auto x) { return std::move(conn.spy(x)); };
+    bodyStream.push(ChunkedSource(spy, spy));
+  } else {
+    size_t len = getContentLength(out.headers);
+    bodyStream.push(TCPIPSource(conn.spy(len)));
   }
 }
 

@@ -20,7 +20,9 @@ private:
   std::string _verb = "GET";
 
 public:
-  Request( std::string url) : url(url) {}
+  Request( std::string url) : url(url) {
+    add_header("Accept-Encoding", "gzip");
+  }
   /// Set the default headers. Calls to add_header later will override anything
   /// in here with the same key
   Request &headers(const Headers &newHeaders) {
