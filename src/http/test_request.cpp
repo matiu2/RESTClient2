@@ -39,16 +39,29 @@ void get_add_header(yield_context yield) {
 
   requireEqual(body["url"], "http://httpbin.org/get");
   requireEqual(body["headers"]["X-Test-Header"], "Test Value");
-
 }
 
 void get_gzipped(yield_context yield) {
+  cout << "Running gzipped" << endl;
+  Request req("http://httpbin.org/gzip");
+  req.set_header("Accept-Encoding", "gzipped");
+  Response res = req.go(yield);
+  auto body = json::readValue(res.body.begin(), res.body.end());
+  requireEqual(res.headers["Content-Encoding"], "gzip");
+  requireEqual(body["method"], "GET");
+  assert((bool)body["gzipped"]);
+  cout << "Run gzipped done" << endl;
+}
+
+void get_deflate(yield_context yield) {
   Request req("http://httpbin.org/gzip");
   Response res = req.go(yield);
   auto body = json::readValue(res.body.begin(), res.body.end());
+  requireEqual(res.headers["Content-Encoding"], "deflate");
   requireEqual(body["method"], "GET");
-  assert((bool)body["gzipped"]);
+  assert((bool)body["deflated"]);
 }
+
 
 void post(yield_context yield) {
   std::string body("This is the body baby");
@@ -75,39 +88,34 @@ int main(int argc, char **argv) {
   if (argc > 1)
     testsToRun = {argv + 1, argv + argc};
 
-  std::map<std::string, std::function<void(yield_context)>> tests{
+  std::map<std::string, std::function<void(yield_context)>> allTests{
       {"chunked_post", chunked_post},
       {"get_add_header", get_add_header},
       {"get", ::get},
-      {"get_gzipped", get_gzipped},
+      {"gzip", get_gzipped},
+      {"deflate", get_deflate},
       {"headers", headers},
       {"post", ::post}};
 
   if (!testsToRun.empty()) {
     for (const std::string &name : testsToRun) {
       cout << "Spawning " << name << endl;
-      auto found = tests.find(name);
-      if (found != tests.end()) {
-        spawn(tests[name]);
+      auto found = allTests.find(name);
+      if (found != allTests.end()) {
+        spawn(found->second);
       } else {
         cout << "Ignoring non-matching name: " << name << endl << "Possible test names: ";
-        for (const auto& pair : tests)
+        for (const auto& pair : allTests)
           cout << pair.first << ", ";
         cout << endl;
       }
     }
   } else {
-    for (const auto &pair : tests) {
+    for (const auto &pair : allTests) {
       cout << "Spawning " << pair.first << endl;
       spawn(pair.second);
     }
   }
-  spawn(::get);
-  spawn(headers);
-  spawn(get_add_header);
-  spawn(get_gzipped);
-  spawn(::post);
-  spawn(chunked_post);
   run();
   return 0;
 }
