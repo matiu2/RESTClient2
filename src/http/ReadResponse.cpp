@@ -136,6 +136,8 @@ void initBodyStream(tcpip::Connection &conn, Response &out, io::filtering_istrea
 void readResponse(tcpip::Connection &conn, Response &out) {
   readHeadersPart(conn, out);
 
+  // TODO: If no decoding is required, just copy straight from asio buffers to
+  // 'out' like how the headers are read
   io::filtering_istream bodyStream;
   initBodyStream(conn, out, bodyStream);
 
@@ -148,6 +150,8 @@ void readResponse(tcpip::Connection &conn, Response &out) {
 
 void readResponse(tcpip::Connection &conn, Response &out, std::ostream &body) {
   readHeadersPart(conn, out);
+  // TODO: If no decoding is required, just copy straight from asio buffers to
+  // 'out' like how the headers are read
   io::filtering_istream bodyStream;
   initBodyStream(conn, out, bodyStream);
 
