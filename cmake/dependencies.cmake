@@ -31,6 +31,7 @@ ExternalProject_Add(jsonpp11
     TEST_BEFORE_INSTALL 0
     BUILD_COMMAND make
     INSTALL_COMMAND make install
+    UPDATE_COMMAND ""
 )
 SET(JSON_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
 include_directories(${JSON_INCLUDE_DIR})
