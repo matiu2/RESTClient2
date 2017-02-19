@@ -18,33 +18,44 @@ void requireEqual(const std::string& a, const std::string& b) {
   }
 }
 
-void headers(yield_context yield) {
-  Request req("http://httpbin.org/get");
-  Response res = req.go(yield);
-}
-
-void get(yield_context yield) {
-  Request req("http://httpbin.org/get");
-  Response res = req.go(yield);
-  auto body = json::readValue(res.body.begin(), res.body.end());
-  requireEqual(body["url"], "http://httpbin.org/get");
+void chunked_post(yield_context yield) {
+  cout << "Running chunked_post..." << endl;
+  std::string part("0123456789");
+  // When we send a stream without a content length it'll send it with a
+  // chunked transmit.
+  // It'll send it in 1024 byte chunks, so we'll make a 1500 byte body
+  std::stringstream body;
+  for (int i = 0; i < 150; ++i)
+    body << part;
+  Response res = post("http://httpbin.org/post").body(body).go(yield);
+  auto j = json::readValue(res.body.begin(), res.body.end());
+  requireEqual(j["data"], body.str());
+  cout << "Run chunked_post done" << endl;
 }
 
 void get_add_header(yield_context yield) {
+  cout << "Running get_add_header..." << endl;
   Request req("http://httpbin.org/get");
   req.add_header("X-Test-Header", "Test Value");
   Response res = req.go(yield);
-
   auto body = json::readValue(res.body.begin(), res.body.end());
-
   requireEqual(body["url"], "http://httpbin.org/get");
   requireEqual(body["headers"]["X-Test-Header"], "Test Value");
+  cout << "Run get_add_header done" << endl;
 }
 
-void get_gzipped(yield_context yield) {
+void doGet(yield_context yield) {
+  cout << "Running get..." << endl;
+  Request req("http://httpbin.org/get");
+  Response res = req.go(yield);
+  auto body = json::readValue(res.body.begin(), res.body.end());
+  requireEqual(body["url"], "http://httpbin.org/get");
+  cout << "Run get done" << endl;
+}
+
+void gzip(yield_context yield) {
   cout << "Running gzipped" << endl;
   Request req("http://httpbin.org/gzip");
-  req.set_header("Accept-Encoding", "gzipped");
   Response res = req.go(yield);
   auto body = json::readValue(res.body.begin(), res.body.end());
   requireEqual(res.headers["Content-Encoding"], "gzip");
@@ -53,70 +64,69 @@ void get_gzipped(yield_context yield) {
   cout << "Run gzipped done" << endl;
 }
 
-void get_deflate(yield_context yield) {
-  Request req("http://httpbin.org/gzip");
+void deflate(yield_context yield) {
+  cout << "Running get_deflate..." << endl;
+  Request req("http://httpbin.org/deflate");
   Response res = req.go(yield);
   auto body = json::readValue(res.body.begin(), res.body.end());
   requireEqual(res.headers["Content-Encoding"], "deflate");
   requireEqual(body["method"], "GET");
   assert((bool)body["deflated"]);
+  cout << "Run get_deflate done" << endl;
 }
 
+void headers(yield_context yield) {
+  cout << "Running headers..." << endl;
+  Request req("http://httpbin.org/get");
+  Response res = req.go(yield);
+  cout << "Run headers done" << endl;
+}
 
-void post(yield_context yield) {
+void doPost(yield_context yield) {
+  cout << "Running post..." << endl;
   std::string body("This is the body baby");
   Response res = post("http://httpbin.org/post").body(body).go(yield);
-
   auto j = json::readValue(res.body.begin(), res.body.end());
   requireEqual(j["data"], body);
-}
-
-void chunked_post(yield_context yield) {
-  std::string part("0123456789");
-  // When we send a stream without a content length it'll send it with a chunked transmit.
-  // It'll send it in 1024 byte chunks, so we'll make a 1500 byte body
-  std::stringstream body;
-  for (int i=0; i < 150; ++i)
-    body << part;
-  Response res = post("http://httpbin.org/post").body(body).go(yield);
-  auto j = json::readValue(res.body.begin(), res.body.end());
-  requireEqual(j["data"], body.str());
+  cout << "Run post done" << endl;
 }
 
 int main(int argc, char **argv) {
-  std::set<std::string> testsToRun;
+  std::vector<std::string> testsToRun;
   if (argc > 1)
     testsToRun = {argv + 1, argv + argc};
 
-  std::map<std::string, std::function<void(yield_context)>> allTests{
-      {"chunked_post", chunked_post},
-      {"get_add_header", get_add_header},
-      {"get", ::get},
-      {"gzip", get_gzipped},
-      {"deflate", get_deflate},
-      {"headers", headers},
-      {"post", ::post}};
+  typedef void (*Action)(yield_context);
+
+  std::map<std::string, Action> allTests{{"chunked_post", chunked_post},
+                                         {"get_add_header", get_add_header},
+                                         {"get", doGet},
+                                         {"gzip", gzip},
+                                         {"deflate", deflate},
+                                         {"headers", headers},
+                                         {"post", doPost}};
 
   if (!testsToRun.empty()) {
     for (const std::string &name : testsToRun) {
-      cout << "Spawning " << name << endl;
       auto found = allTests.find(name);
       if (found != allTests.end()) {
+        cout << "Spawning " << name << endl;
         spawn(found->second);
       } else {
-        cout << "Ignoring non-matching name: " << name << endl << "Possible test names: ";
-        for (const auto& pair : allTests)
+        cout << "Ignoring non-matching name: " << name << endl
+             << "Possible test names: ";
+        for (const auto &pair : allTests)
           cout << pair.first << ", ";
         cout << endl;
       }
     }
   } else {
-    for (const auto &pair : allTests) {
+    for (auto &pair : allTests) {
       cout << "Spawning " << pair.first << endl;
       spawn(pair.second);
     }
   }
-  run();
+  cout << run() << endl;
   return 0;
 }
 

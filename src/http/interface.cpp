@@ -5,14 +5,14 @@
 namespace RESTClient {
 namespace http {
 
-void spawn(std::function<void(boost::asio::yield_context)> worker) {
+void spawn(std::function<void(boost::asio::yield_context)>&& worker) {
   auto io = tcpip::getService();
-  spawn(*io, worker);
+  tcpip::spawn(*io, std::move(worker));
 }
 
-void run() {
+size_t run() {
   auto io = tcpip::getService();
-  io->run();
+  return io->run();
 }
 
 } /* http  */
