@@ -32,16 +32,8 @@ namespace http {
 
 bool is_chunked(const Headers &headers) {
   auto found = headers.find("Transfer-Encoding");
-  if (found == headers.end())
+  if (found != headers.end())
     return found->second == "chunked";
-  else
-    return false;
-}
-
-bool is_deflated(const Headers &headers) {
-  auto found = headers.find("Content-Encoding");
-  if (found == headers.end())
-    return found->second == "deflate";
   else
     return false;
 }
@@ -104,12 +96,6 @@ void readHeadersPart(tcpip::Connection &conn, Response &out) {
     }
     out.headers.emplace(std::move(key), std::move(val));
   }
-
-  // Now check what sort of body encoding we have
-  auto found = out.headers.find("Transfer-Encoding");
-  std::string encoding("identity");
-  if (found != out.headers.end())
-    encoding = found->second;
 }
 
 void initBodyStream(tcpip::Connection &conn, Response &out, io::filtering_istream& bodyStream) {

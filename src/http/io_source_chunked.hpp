@@ -25,10 +25,12 @@ public:
 
   SpyN spyN;
   SpyD spyD;
+  bool done = false;
 
   struct Innards {
     tcpip::SpyGuard chunk;
     tcpip::SpyIterator i = chunk.begin();
+    bool done() const { return i == chunk.end(); }
   };
 
   std::shared_ptr<Innards> innards;
@@ -43,14 +45,19 @@ public:
   void getNextChunk();
 
   std::streamsize read(char *s, std::streamsize n) {
+    if (done)
+      return -1;
     // Read up to n characters from the underlying data source
     // into the buffer s, returning the number of characters
     // read; return -1 to indicate EOF
-    if (!innards)
+    if ((!innards) || (innards->done()))
       getNextChunk();
     // There is no more data
-    if (!innards)
+    if (!innards) {
+      // Need to set done, because they call back even after we tell them there's nothing left.
+      done = true;
       return -1;
+    }
     // There is data, return as much data as we can
     size_t count = 0;
     auto &chunk = innards->chunk;
