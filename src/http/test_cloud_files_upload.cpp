@@ -10,6 +10,8 @@
 #include <set>
 
 
+using namespace std::string_literals;
+
 const std::string configFilename(".cloudUploadTest.json");
 
 struct Config {
@@ -48,15 +50,17 @@ using RESTClient::http::yield_context;
 std::string authToken;
 json::JMap authJSON;
 
-void auth(yield_context& yield, const std::string& username, const std::string& apikey) {
+void auth(yield_context &yield, const std::string &username,
+          const std::string &apikey) {
   if (authToken.empty()) {
     using json::JMap;
     json::JSON authRequest(
-        JMap{{"auth", JMap{JMap{{"RAX-KSKEY:apiKeyCredentials",
-                                 JMap{{"username", username},
-                                      {"apiKey", apikey}}}}}}});
+        JMap{{"auth",
+              JMap{JMap{{"RAX-KSKEY:apiKeyCredentials",
+                         JMap{{"username", username}, {"apiKey", apikey}}}}}}});
     std::string resp =
-        RESTClient::http::post("https://identity.api.rackspacecloud.com/v2.0/tokens")
+        RESTClient::http::post(
+            "https://identity.api.rackspacecloud.com/v2.0/tokens")
             .body(authRequest.toString())
             .add_header("Accept", "application/json")
             .add_header("Content-Type", "application/json")
@@ -64,13 +68,13 @@ void auth(yield_context& yield, const std::string& username, const std::string& 
             .body;
     try {
       authJSON = json::readValue(resp.begin(), resp.end());
-    } catch(std::exception& e) {
+    } catch (std::exception &e) {
       std::cerr << "Unable to read json response: " << resp << '\n';
       throw e;
     }
     try {
       authToken = authJSON["access"]["token"]["id"];
-    } catch(std::exception& e) {
+    } catch (std::exception &e) {
       std::cerr << "No token found in json: " << resp << '\n';
       throw e;
     }
@@ -82,6 +86,22 @@ void upload(yield_context yield, const Config &config) {
   try {
     auth(yield, config.username, config.apikey);
     std::cout << "Auth token: " << authToken << std::endl;
+    // Now get the URL of the cloud files
+    std::string url;
+    const json::JList& serviceCatalog(authJSON["access"]["serviceCatalog"]);
+    for (const json::JMap& page : serviceCatalog) {
+      if (page.at("name") == "cloudFiles"s) {
+        for (const json::JMap &entry :
+             static_cast<const json::JList &>(page.at("endpoints")))
+          if (entry.at("region") == config.region) {
+            url = entry.at("publicURL");
+            break;
+          }
+        break;
+      }
+    }
+    using namespace std;
+    cout << "Cloud files url for " << config.region << ": " << url << endl;
   } catch (std::exception &e) {
     std::cerr << "Exception: " << e.what() << std::endl;
   } catch (...) {
