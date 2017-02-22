@@ -113,7 +113,10 @@ Response Request::go(yield_context yield) const {
 
   // Now read the reply
   Response response;
-  readResponse(*conn, response);
+  if (_outBody)
+    readResponse(*conn, response, *_outBody);
+  else
+    readResponse(*conn, response);
 
   return response;
 }

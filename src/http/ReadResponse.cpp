@@ -6,6 +6,7 @@
 
 #include <string>
 #include <sstream>
+#include <streambuf>
 
 #include <boost/fusion/include/vector.hpp>
 #include <boost/fusion/include/vector_tie.hpp>
@@ -98,7 +99,8 @@ void readHeadersPart(tcpip::Connection &conn, Response &out) {
   }
 }
 
-void initBodyStream(tcpip::Connection &conn, Response &out, io::filtering_istream& bodyStream) {
+void initBodyStream(tcpip::Connection &conn, Response &out,
+                    io::filtering_istream &bodyStream) {
   // Now see if it needs unzipping
   auto found = out.headers.find("Content-Encoding");
   if (found != out.headers.end()) {
@@ -128,9 +130,8 @@ void readResponse(tcpip::Connection &conn, Response &out) {
   initBodyStream(conn, out, bodyStream);
 
   // Now copy the de-chunked and unzipped data to the usable body
-  std::noskipws(bodyStream);
-  std::copy(std::istream_iterator<char>(bodyStream),
-            std::istream_iterator<char>(), std::back_inserter(out.body));
+  std::copy(std::istreambuf_iterator<char>(bodyStream),
+            std::istreambuf_iterator<char>(), std::back_inserter(out.body));
 
 }
 
@@ -142,8 +143,9 @@ void readResponse(tcpip::Connection &conn, Response &out, std::ostream &body) {
   initBodyStream(conn, out, bodyStream);
 
   // Now copy the de-chunked and unzipped data to the usable body
-  std::copy(std::istream_iterator<char>(bodyStream),
-            std::istream_iterator<char>(), std::ostream_iterator<char>(body));
+  std::copy(std::istreambuf_iterator<char>(bodyStream),
+            std::istreambuf_iterator<char>(),
+            std::ostream_iterator<char>(body));
 }
 
 } /* http */

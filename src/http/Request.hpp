@@ -15,7 +15,7 @@ private:
   Headers extra_headers;
   std::istream* body_stream = nullptr;
   const std::string* body_string = nullptr;
-  std::istream* _outBody = nullptr;
+  std::ostream* _outBody = nullptr;
   std::string url;
   std::string _verb = "GET";
 
@@ -73,7 +73,7 @@ public:
   /// Causes the incoming (over tcpip) body to be saved to a stream (rather
   /// than just as a string in the Response object). The resulting
   /// Response::body string will be empty
-  Request &saveToStream(std::istream &responseBody) {
+  Request &saveToStream(std::ostream &responseBody) {
     _outBody = &responseBody;
     return *this;
   }

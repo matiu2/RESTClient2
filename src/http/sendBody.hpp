@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ostream>
+#include <streambuf>
 
 #include "../tcpip/Connection.hpp"
 
@@ -13,8 +14,8 @@ void sendStream(std::istream &data,
                 std::function<void(const std::string &)> sender) {
   std::string buf;
   buf.reserve(buf_size);
-  std::istream_iterator<char> in(data);
-  std::istream_iterator<char> end;
+  std::istreambuf_iterator<char> in(data);
+  std::istreambuf_iterator<char> end;
   while (in != end) {
     auto out = std::back_inserter(buf);
     // Copy from the stream into our buffer

@@ -37,7 +37,7 @@ struct Config {
       }
     }
     json::JMap config = json::readValue(std::string(
-        std::istream_iterator<char>(f), std::istream_iterator<char>()));
+        std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>()));
     username = config["username"];
     apikey = config["apikey"];
     filename = config["filename"];
@@ -47,6 +47,8 @@ struct Config {
 
 using RESTClient::http::yield_context;
 
+RESTClient::http::Headers baseHeaders{{"Accept", "application/json"},
+                                      {"Content-Type", "application/json"}};
 std::string authToken;
 json::JMap authJSON;
 
@@ -78,6 +80,7 @@ void auth(yield_context &yield, const std::string &username,
       std::cerr << "No token found in json: " << resp << '\n';
       throw e;
     }
+    baseHeaders.insert(std::make_pair("X-Auth-Token", authToken));
   }
 }
 
@@ -100,8 +103,49 @@ void upload(yield_context yield, const Config &config) {
         break;
       }
     }
-    using namespace std;
-    cout << "Cloud files url for " << config.region << ": " << url << endl;
+    std::cout << "Cloud files url for " << config.region << ": " << url
+              << std::endl;
+    const std::string& accountID = authJSON["access"]["token"]["tenant"]["id"];
+    const std::string containerName = "test-restclient";
+    
+    // Check if the container is there
+    auto resp = RESTClient::http::get(url + "/" + containerName)
+                    .headers(baseHeaders)
+                    .go(yield);
+
+    if (resp.code == 404) {
+      // Create the container (don't worry if it fails; just try)
+      resp = RESTClient::http::put(url + "/" + containerName)
+                 .headers(baseHeaders)
+                 .go(yield);
+      std::cout << "Created container: " << resp.code << " - " << resp.body
+                << std::endl;
+    } else {
+      std::cout << "Container already exists: " << resp.code << std::endl;
+    }
+
+    // Upload a file
+    std::ifstream file(config.filename);
+    std::cout << "Uploading..." << std::endl;
+    resp =
+        RESTClient::http::put(url + "/" + containerName + "/" + config.filename)
+            .headers(baseHeaders)
+            .body(file)
+            .go(yield);
+    std::cout << "Upload result: " << resp.code << ": " << resp.body
+              << std::endl;
+
+    // Now download it
+    std::cout << "Downloading..." << std::endl;
+    std::ofstream down("downloaded.txt");
+    resp =
+        RESTClient::http::get(url + "/" + containerName + "/" + config.filename)
+            .headers(baseHeaders)
+            .saveToStream(down)
+            .go(yield);
+    std::cout << "Download result: " << resp.code << ": " << resp.body
+              << std::endl;
+    std::cout << "Downloading to downloaded.txt" << std::endl;
   } catch (std::exception &e) {
     std::cerr << "Exception: " << e.what() << std::endl;
   } catch (...) {
