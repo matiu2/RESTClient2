@@ -1,5 +1,5 @@
 /** Tests chunked uploading to cloud files **/ 
-#include "interface.hpp"
+#include "../rest.hpp"
 
 #include <jsonpp11/parse_to_json_class.hpp>
 #include <jsonpp11/json_class.hpp>
@@ -55,17 +55,17 @@ json::JMap authJSON;
 void auth(yield_context &yield, const std::string &username,
           const std::string &apikey) {
   if (authToken.empty()) {
+    RESTClient::REST auth("https://identity.api.rackspacecloud.com/v2.0",
+                          baseHeaders);
     using json::JMap;
-    json::JSON authRequest(
-        JMap{{"auth",
-              JMap{JMap{{"RAX-KSKEY:apiKeyCredentials",
-                         JMap{{"username", username}, {"apiKey", apikey}}}}}}});
+
     std::string resp =
-        RESTClient::http::post(
-            "https://identity.api.rackspacecloud.com/v2.0/tokens")
-            .body(authRequest.toString())
-            .add_header("Accept", "application/json")
-            .add_header("Content-Type", "application/json")
+        auth.post("/tokens")
+            .body(json::JSON(
+                      JMap{{"auth", JMap{JMap{{"RAX-KSKEY:apiKeyCredentials",
+                                               JMap{{"username", username},
+                                                    {"apiKey", apikey}}}}}}})
+                      .toString())
             .go(yield)
             .body;
     try {
@@ -107,17 +107,15 @@ void upload(yield_context yield, const Config &config) {
               << std::endl;
     const std::string& accountID = authJSON["access"]["token"]["tenant"]["id"];
     const std::string containerName = "test-restclient";
-    
+
+    RESTClient::REST cloudFiles(url, baseHeaders);
+
     // Check if the container is there
-    auto resp = RESTClient::http::get(url + "/" + containerName)
-                    .headers(baseHeaders)
-                    .go(yield);
+    auto resp = cloudFiles.get(containerName).go(yield);
 
     if (resp.code == 404) {
       // Create the container (don't worry if it fails; just try)
-      resp = RESTClient::http::put(url + "/" + containerName)
-                 .headers(baseHeaders)
-                 .go(yield);
+      resp = cloudFiles.put(containerName).go(yield);
       std::cout << "Created container: " << resp.code << " - " << resp.body
                 << std::endl;
     } else {
@@ -127,22 +125,19 @@ void upload(yield_context yield, const Config &config) {
     // Upload a file
     std::ifstream file(config.filename);
     std::cout << "Uploading..." << std::endl;
-    resp =
-        RESTClient::http::put(url + "/" + containerName + "/" + config.filename)
-            .headers(baseHeaders)
-            .body(file)
-            .go(yield);
+
+    resp = cloudFiles.put(containerName + "/" + config.filename)
+               .body(file)
+               .go(yield);
     std::cout << "Upload result: " << resp.code << ": " << resp.body
               << std::endl;
 
     // Now download it
     std::cout << "Downloading..." << std::endl;
     std::ofstream down("downloaded.txt");
-    resp =
-        RESTClient::http::get(url + "/" + containerName + "/" + config.filename)
-            .headers(baseHeaders)
-            .saveToStream(down)
-            .go(yield);
+    resp = cloudFiles.get(containerName + "/" + config.filename)
+               .saveToStream(down)
+               .go(yield);
     std::cout << "Download result: " << resp.code << ": " << resp.body
               << std::endl;
     std::cout << "Downloading to downloaded.txt" << std::endl;
