@@ -1,5 +1,5 @@
 /** Tests chunked uploading to cloud files **/ 
-#include "../rest.hpp"
+#include "rest.hpp"
 
 #include <jsonpp11/parse_to_json_class.hpp>
 #include <jsonpp11/json_class.hpp>
