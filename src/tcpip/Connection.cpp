@@ -1,5 +1,6 @@
 #include "Connection.hpp"
 #include "interface.hpp"
+#include "Exceptions.hpp"
 
 #include <boost/asio/basic_streambuf.hpp>
 #include <boost/asio/buffers_iterator.hpp>
@@ -41,9 +42,23 @@ public:
        bool is_ssl)
       : io(getService()), address(address), service(service), socket(*io),
         yield(yield), ssl(), _buf() {
+    // Lookup the IP addresse
+    asio::ip::basic_resolver_iterator<boost::asio::ip::tcp> endpoints;
+    try {
+      endpoints = lookup(address, service, yield);
+    } catch (const std::exception &e) {
+      throw DNSLookupError(address, e.what());
+    } catch (...) {
+      throw DNSLookupError(address, "Unkown");
+    }
     // Connect the socket
-    auto endpoints = lookup(address, service, yield);
-    asio::async_connect(socket, endpoints, yield);
+    try {
+      asio::async_connect(socket, endpoints, yield);
+    } catch (const std::exception &e) {
+      throw ConnectionError(address, service, e.what());
+    } catch (...) {
+      throw ConnectionError(address, service, "Unkown");
+    }
     // Perform ssl startup if requested
     if (is_ssl) {
       ssl.reset(new SSL(socket));
@@ -91,10 +106,7 @@ public:
         return;
       }
       // Something scary happened, log an error (throw an exception too)
-      std::stringstream msg;
-      msg << "Unabled to shutdown SSL connection: " << ec.category().name()
-          << " (" << ec.value() << ") " << ec.category().message(ec.value());
-      throw std::runtime_error(msg.str());
+      throw SSLShutdownError(ec);
     }
     if (socket.is_open()) {
       socket.close();
@@ -209,6 +221,7 @@ void Connection::recv(std::ostream &data, size_t size) { m->recv(data, size); }
 SpyGuard Connection::spy(char delim) { return m->spy(delim); }
 SpyGuard Connection::spy(size_t size) { return m->spy(size); }
 void Connection::consume(size_t size) { m->consume(size); }
+yield_context& Connection::yield() {return m->yield; }
 
 } // tcpip
 } /* RESTClient */ 

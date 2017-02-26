@@ -1,0 +1,60 @@
+# Simplish REST Client for c++
+
+ + It brings in jsonpp11 - a fun to use json API.
+ + It doesn't give any XML support.
+ + It depends on boost::asio and boost::spirit::x3
+ + It is asynchonous, but programs like synchronous, using boost context switching
+ + It probably doesn't work in multi threaded
+
+I made it just so I can get some stuff done. All comments/suggetions/patches welcome.
+
+## Deceptively easy example
+
+    // Make up some default headers that will be used for all requests
+    RESTClient::http::Headers baseHeaders{{"Accept", "application/json"},
+                                          {"Content-Type", "application/json"}};
+
+    // Create an API client endpoint, passing the base URL and the default headers
+    RESTClient::REST myAPI("https://some-api.com/api-v2.0",
+                          baseHeaders);
+
+    // Call get/post/delet etc passing the path '/tokens'
+    // Because we have a RESTClient::http::Request object, we can chain all the methods on it.
+    // .go(yield) returns a Response object
+    RESTClient::http::Response resp = myAPI.get("/some-object").get().go(yield);
+
+    // Now we can read the body (which is in a string)
+    const std::string& body(resp.body());
+
+## Downloading to a file
+
+    std::ofstream out("bigFile.mp4");
+    auto resp = myAPI.get("/large-object").saveToStream(out).go(yield);
+    std::cout << "HTTP Code: " << resp.code << std::endl;
+
+## Uploading a file (via put)
+
+    std::ifstream in("bigFile.mp4");
+    auto resp = myAPI.put("/large-object").body(in).go(yield);
+
+## Just posting a string
+
+    std::string in("some body data");
+    auto resp = myAPI.post("/large-object").body(in).go(yield);
+
+# Now the hard bit
+
+Because it uses boost contexts each strand must be spawned:
+
+    void upload(yield_context yield, const Config &config) {
+        // Do actual work
+    }
+
+    int main(int, char**) {
+      Config config;
+      RESTClient::http::spawn([&config](yield_context y) { upload(y, config); });
+      RESTClient::http::run();
+      return 0;
+    }
+
+You're welcome to have multiple workers at once, as one 'yields' waiting for net IO, another will get some work done.

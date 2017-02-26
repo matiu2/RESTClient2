@@ -54,6 +54,8 @@ public:
 
   /// Wipe out the buffer we don't need any more after 'spy'ing it
   void consume(size_t size);
+
+  yield_context& yield();
 };
 
 } // tcpip
