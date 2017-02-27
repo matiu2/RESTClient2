@@ -1,7 +1,6 @@
 #include "Request.hpp"
 
 #include "url.hpp"
-#include "ConnectionPool.hpp"
 #include "sendBody.hpp"
 #include "ReadResponse.hpp"
 
@@ -12,7 +11,8 @@ namespace RESTClient {
 namespace http {
 
 /// Transmits the headers; if an item is duplicated in both sets; extra_headers takes presedence.
-void transmitHeaders(const Headers* defaultHeaders, const Headers& extra_headers, tcpip::Connection& conn) {
+void transmitHeaders(const Headers *defaultHeaders,
+                     const Headers &extra_headers, tcpip::Connection &conn) {
   auto sendHeader = [&](const auto &header) {
       conn.send(header.first);
       conn.send(": ");
@@ -57,21 +57,20 @@ boost::optional<size_t> checkForContentLength(const Headers *defaultHeaders,
   return result;
 };
 
-Response Request::go(yield_context yield) const {
+Response Request::go() const {
   // Get a TCP/IP connection from the connection pool
   URL url(this->url);
-  auto conn = getConnection(url.host_part(), yield);
   // Send the request line
-  conn->send(_verb + ' ');
-  conn->send(url.path_part());
-  conn->send(" HTTP/1.1\r\n");
+  conn.send(_verb + ' ');
+  conn.send(url.path_part());
+  conn.send(" HTTP/1.1\r\n");
   // Send the Host header
-  conn->send("Host: ");
-  conn->send(url.hostname);
-  conn->send("\r\n");
+  conn.send("Host: ");
+  conn.send(url.hostname);
+  conn.send("\r\n");
   /// Returns the content length if it was set in any headers
   // Send the headers
-  transmitHeaders(_headers, extra_headers, *conn);
+  transmitHeaders(_headers, extra_headers, conn);
   // See if we're sending a Content-Length header or transmitting in chunked
   // encoding
   boost::optional<size_t> contentLength(
@@ -79,44 +78,44 @@ Response Request::go(yield_context yield) const {
   if ((!contentLength) && (!body_stream) && (body_string)) {
     // We have a body_string, so we know the content length; lets send it
     contentLength = body_string->size();
-    conn->send("Content-Length: ");
-    conn->send(std::to_string(contentLength.value()));
-    conn->send("\r\n");
+    conn.send("Content-Length: ");
+    conn.send(std::to_string(contentLength.value()));
+    conn.send("\r\n");
   } else if ((!contentLength) && (body_stream)) {
     if (body_stream) {
       // We don't know the Content-Length; we'll be transmitting in 'chunked' encoding
       boost::optional<std::string> te(checkForHeader("Transfer-Encoding", _headers, extra_headers));
       if (!te)
-        conn->send("Transfer-Encoding: chunked\r\n");
+        conn.send("Transfer-Encoding: chunked\r\n");
     } else {
       // We have no body
       if (!contentLength) {
         // If we haven't sent the content length, send it now
-        conn->send("Content-Length: 0\r\n");
+        conn.send("Content-Length: 0\r\n");
       }
     }
   }
   // No more headers
-  conn->send("\r\n");
+  conn.send("\r\n");
 
   // Send the body
   if (body_stream) {
     // Send the stream contents up the Internet
     if (contentLength)
-      sendStream(*body_stream, *conn);
+      sendStream(*body_stream, conn);
     else
-      chunkedTransmit(*body_stream, *conn);
+      chunkedTransmit(*body_stream, conn);
   } else if (body_string) {
     // We have a string; just send it
-    conn->send(*body_string);
+    conn.send(*body_string);
   }
 
   // Now read the reply
   Response response;
   if (_outBody)
-    readResponse(*conn, response, *_outBody);
+    readResponse(conn, response, *_outBody);
   else
-    readResponse(*conn, response);
+    readResponse(conn, response);
 
   return response;
 }

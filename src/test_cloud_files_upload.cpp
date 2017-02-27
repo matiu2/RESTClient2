@@ -1,16 +1,20 @@
-/** Tests chunked uploading to cloud files **/ 
+/** Tests chunked uploading to cloud files **/
 #include "rest.hpp"
 
-#include <jsonpp11/parse_to_json_class.hpp>
 #include <jsonpp11/json_class.hpp>
-#include <iterator>
-#include <fstream>
+#include <jsonpp11/parse_to_json_class.hpp>
+
+#include <boost/exception/all.hpp>
+
 #include <cassert>
+#include <fstream>
 #include <iostream>
+#include <iterator>
 #include <set>
 
-
 using namespace std::string_literals;
+
+typedef boost::error_info<struct tag_stack, std::string> stack_info;
 
 const std::string configFilename(".cloudUploadTest.json");
 
@@ -55,8 +59,8 @@ json::JMap authJSON;
 void auth(yield_context &yield, const std::string &username,
           const std::string &apikey) {
   if (authToken.empty()) {
-    RESTClient::REST auth("https://identity.api.rackspacecloud.com/v2.0",
-                          baseHeaders);
+    RESTClient::REST auth(
+        yield, {"https://identity.api.rackspacecloud.com/v2.0"}, baseHeaders);
     using json::JMap;
 
     std::string resp =
@@ -66,7 +70,7 @@ void auth(yield_context &yield, const std::string &username,
                                                JMap{{"username", username},
                                                     {"apiKey", apikey}}}}}}})
                       .toString())
-            .go(yield)
+            .go()
             .body;
     try {
       authJSON = json::readValue(resp.begin(), resp.end());
@@ -91,8 +95,8 @@ void upload(yield_context yield, const Config &config) {
     std::cout << "Auth token: " << authToken << std::endl;
     // Now get the URL of the cloud files
     std::string url;
-    const json::JList& serviceCatalog(authJSON["access"]["serviceCatalog"]);
-    for (const json::JMap& page : serviceCatalog) {
+    const json::JList &serviceCatalog(authJSON["access"]["serviceCatalog"]);
+    for (const json::JMap &page : serviceCatalog) {
       if (page.at("name") == "cloudFiles"s) {
         for (const json::JMap &entry :
              static_cast<const json::JList &>(page.at("endpoints")))
@@ -105,17 +109,17 @@ void upload(yield_context yield, const Config &config) {
     }
     std::cout << "Cloud files url for " << config.region << ": " << url
               << std::endl;
-    const std::string& accountID = authJSON["access"]["token"]["tenant"]["id"];
+    const std::string &accountID = authJSON["access"]["token"]["tenant"]["id"];
     const std::string containerName = "test-restclient";
 
-    RESTClient::REST cloudFiles(url, baseHeaders);
+    RESTClient::REST cloudFiles(yield, url, baseHeaders);
 
     // Check if the container is there
-    auto resp = cloudFiles.get(containerName).go(yield);
+    auto resp = cloudFiles.get(containerName).go();
 
     if (resp.code == 404) {
       // Create the container (don't worry if it fails; just try)
-      resp = cloudFiles.put(containerName).go(yield);
+      resp = cloudFiles.put(containerName).go();
       std::cout << "Created container: " << resp.code << " - " << resp.body
                 << std::endl;
     } else {
@@ -126,9 +130,8 @@ void upload(yield_context yield, const Config &config) {
     std::ifstream file(config.filename);
     std::cout << "Uploading..." << std::endl;
 
-    resp = cloudFiles.put(containerName + "/" + config.filename)
-               .body(file)
-               .go(yield);
+    resp =
+        cloudFiles.put(containerName + "/" + config.filename).body(file).go();
     std::cout << "Upload result: " << resp.code << ": " << resp.body
               << std::endl;
 
@@ -137,18 +140,26 @@ void upload(yield_context yield, const Config &config) {
     std::ofstream down("downloaded.txt");
     resp = cloudFiles.get(containerName + "/" + config.filename)
                .saveToStream(down)
-               .go(yield);
+               .go();
     std::cout << "Download result: " << resp.code << ": " << resp.body
               << std::endl;
     std::cout << "Downloading to downloaded.txt" << std::endl;
+  } catch (const boost::exception &e) {
+    std::cerr << "Upload error: " << boost::diagnostic_information(e)
+              << std::endl;
   } catch (std::exception &e) {
-    std::cerr << "Exception: " << e.what() << std::endl;
+    std::string const *stack(boost::get_error_info<stack_info>(e));
+    if (stack) {
+      std::cout << stack << std::endl;
+    } else {
+      std::cerr << "Exception: " << e.what() << std::endl;
+    }
   } catch (...) {
     std::cerr << "Unknown exception" << std::endl;
   }
 };
 
-int main(int, char**) {
+int main(int, char **) {
   Config config;
   RESTClient::http::spawn([&config](yield_context y) { upload(y, config); });
   RESTClient::http::run();

@@ -8,7 +8,7 @@ add_subdirectory(http)
 add_subdirectory(example)
 
 if (ENABLE_TESTS)
-  add_executable(test_cloud_files_upload test_cloud_files_upload.cpp)
+  add_executable(test_cloud_files_upload test_cloud_files_upload.cpp url_parser.cpp)
   target_link_libraries(test_cloud_files_upload http)
   add_test(test_cloud_files_upload test_cloud_files_upload)
 endif()

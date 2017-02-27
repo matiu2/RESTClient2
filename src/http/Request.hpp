@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Response.hpp"
+#include "../tcpip/Connection.hpp"
 
 #include <boost/asio/spawn.hpp>
 
@@ -16,11 +17,12 @@ private:
   std::istream* body_stream = nullptr;
   const std::string* body_string = nullptr;
   std::ostream* _outBody = nullptr;
+  tcpip::Connection& conn;
   std::string url;
   std::string _verb = "GET";
 
 public:
-  Request(std::string url) : url(url) {
+  Request(tcpip::Connection &aConn, std::string url) : conn(aConn), url(url) {
     set_header("Accept-Encoding", "gzip, deflate");
   }
   /// Set the default headers. Calls to set_header later will override anything
@@ -77,7 +79,7 @@ public:
     _outBody = &responseBody;
     return *this;
   }
-  Response go(yield_context yield) const;
+  Response go() const;
 };
 
 } /* http */ 

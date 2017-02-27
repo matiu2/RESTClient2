@@ -27,7 +27,8 @@ void chunked_post(yield_context yield) {
   std::stringstream body;
   for (int i = 0; i < 150; ++i)
     body << part;
-  Response res = post("http://httpbin.org/post").body(body).go(yield);
+  RESTClient::tcpip::Connection conn("httpbin.org", "http", yield);
+  Response res = post(conn, "https://httpbin.org/post").body(body).go();
   auto j = json::readValue(res.body.begin(), res.body.end());
   requireEqual(j["data"], body.str());
   cout << "Run chunked_post done" << endl;
@@ -35,28 +36,31 @@ void chunked_post(yield_context yield) {
 
 void get_add_header(yield_context yield) {
   cout << "Running get_add_header..." << endl;
-  Request req("http://httpbin.org/get");
+  RESTClient::tcpip::Connection conn("httpbin.org", "https", yield, true);
+  Request req(conn, "https://httpbin.org/get");
   req.add_header("X-Test-Header", "Test Value");
-  Response res = req.go(yield);
+  Response res = req.go();
   auto body = json::readValue(res.body.begin(), res.body.end());
-  requireEqual(body["url"], "http://httpbin.org/get");
+  requireEqual(body["url"], "https://httpbin.org/get");
   requireEqual(body["headers"]["X-Test-Header"], "Test Value");
   cout << "Run get_add_header done" << endl;
 }
 
 void doGet(yield_context yield) {
   cout << "Running get..." << endl;
-  Request req("http://httpbin.org/get");
-  Response res = req.go(yield);
+  RESTClient::tcpip::Connection conn("httpbin.org", "https", yield, true);
+  Request req(conn, "https://httpbin.org/get");
+  Response res = req.go();
   auto body = json::readValue(res.body.begin(), res.body.end());
-  requireEqual(body["url"], "http://httpbin.org/get");
+  requireEqual(body["url"], "https://httpbin.org/get");
   cout << "Run get done" << endl;
 }
 
 void gzip(yield_context yield) {
   cout << "Running gzipped" << endl;
-  Request req("http://httpbin.org/gzip");
-  Response res = req.go(yield);
+  RESTClient::tcpip::Connection conn("httpbin.org", "https", yield, true);
+  Request req(conn, "https://httpbin.org/gzip");
+  Response res = req.go();
   auto body = json::readValue(res.body.begin(), res.body.end());
   requireEqual(res.headers["Content-Encoding"], "gzip");
   requireEqual(body["method"], "GET");
@@ -66,8 +70,9 @@ void gzip(yield_context yield) {
 
 void deflate(yield_context yield) {
   cout << "Running get_deflate..." << endl;
-  Request req("http://httpbin.org/deflate");
-  Response res = req.go(yield);
+  RESTClient::tcpip::Connection conn("httpbin.org", "https", yield, true);
+  Request req(conn, "https://httpbin.org/deflate");
+  Response res = req.go();
   auto body = json::readValue(res.body.begin(), res.body.end());
   requireEqual(res.headers["Content-Encoding"], "deflate");
   requireEqual(body["method"], "GET");
@@ -77,18 +82,25 @@ void deflate(yield_context yield) {
 
 void headers(yield_context yield) {
   cout << "Running headers..." << endl;
-  Request req("http://httpbin.org/get");
-  Response res = req.go(yield);
+  RESTClient::tcpip::Connection conn("httpbin.org", "https", yield, true);
+  Request req(conn, "https://httpbin.org/get");
+  Response res = req.go();
   cout << "Run headers done" << endl;
 }
 
 void doPost(yield_context yield) {
-  cout << "Running post..." << endl;
-  std::string body("This is the body baby");
-  Response res = post("http://httpbin.org/post").body(body).go(yield);
-  auto j = json::readValue(res.body.begin(), res.body.end());
-  requireEqual(j["data"], body);
-  cout << "Run post done" << endl;
+  try {
+    cout << "Running post..." << endl;
+    std::string body("This is the body baby");
+    RESTClient::tcpip::Connection conn("httpbin.org", "https", yield, true);
+    Response res = post(conn, "https://httpbin.org/post").body(body).go();
+    auto j = json::readValue(res.body.begin(), res.body.end());
+    requireEqual(j["data"], body);
+    cout << "Run post done" << endl;
+  } catch (const boost::exception &e) {
+    std::cerr << "Error in post test: " << boost::diagnostic_information(e)
+              << std::endl;
+  }
 }
 
 int main(int argc, char **argv) {

@@ -1,6 +1,7 @@
 #pragma once
 
-#include <stdexcept>
+#include <boost/exception/all.hpp>
+#include <boost/system/error_code.hpp>
 #include <string>
 
 using namespace std::string_literals;
@@ -8,44 +9,43 @@ using namespace std::string_literals;
 namespace RESTClient {
 namespace tcpip {
 
+// Error info for the original 'what()'
+using ei_orig = boost::error_info<struct tag_orig, std::string>;
+
 /// Base exception for all tcpip errors
-struct Exception : public std::runtime_error {
-  Exception(std::string what) : std::runtime_error(std::move(what)) {}
-};
+struct Exception : virtual std::exception, virtual boost::exception {};
 
 /// Unable to resolve hostname
-struct DNSLookupError : public Exception {
-  std::string hostname;
-  std::string reason;
-  DNSLookupError(std::string hostname, std::string reason)
-      : Exception("DNS lookup error for '"s + hostname + ": " + reason),
-        hostname(std::move(hostname)), reason(std::move(reason)) {}
-};
+struct DNSLookupError : virtual Exception {};
+
+// Error Info hostname - to add the hostname to a DNS lookup error
+using ei_hostname = boost::error_info<struct tag_hostname, std::string>;
 
 /// Unable to establish tcpip connection
-struct ConnectionError : public Exception {
-  std::string hostname;
-  std::string service;
-  std::string reason;
-  ConnectionError(std::string hostname, unsigned short port, std::string reason)
-      : Exception("Unable to connect to '"s + hostname + "' service/port '"s +
-                  std::to_string(port) + "': " + reason),
-        hostname(std::move(hostname)), service(std::move(service)),
-        reason(std::move(reason)) {}
-  ConnectionError(const std::string &hostname, std::string service,
-                  std::string reason)
-      : Exception("Unable to connect to '"s + hostname + "' service/port '"s +
-                  service + "': " + reason),
-        hostname(std::move(hostname)), service(std::move(service))),
-        reason(std::move(reason)) {}
-};
+struct ConnectionError : virtual Exception {};
 
-struct SSLShutdownError : public Exception {
-  SSLShutdownError(boost::system::error_code ec)
-      : Exception("Unabled to shutdown SSL connection: "s +
-                  ec.category().name() + " (" + std::to_string(ec.value()) +
-                  ") " + ec.category().message(ec.value())) {}
-};
+// Error Info service - to add the service/port to a connect error
+using ei_service = boost::error_info<struct tag_service, std::string>;
 
-} /* tcpip */ 
-} /* RESTClient  */ 
+struct SSLShutdownError : virtual Exception {};
+
+// Adding boost::system::error_code to an exception
+using ei_errcode = boost::error_info<struct tag_syscode, boost::system::error_code>;
+
+struct send_err : virtual Exception {};
+struct recv_err : virtual Exception {};
+
+// The number of bytes we tried to send, or received
+using ei_numbytes = boost::error_info<struct tag_numbytes, unsigned short>;
+
+// The number of bytes we were supposed to receiv
+using ei_reqbytes = boost::error_info<struct tag_reqbytes, unsigned short>;
+
+// The delimeter we were looking for
+using ei_delim = boost::error_info<struct tag_delim, char>;
+
+// The data we tried to send, or did recv
+using ei_data = boost::error_info<struct tag_data, std::string>;
+
+} /* tcpip */
+} /* RESTClient  */

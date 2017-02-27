@@ -1,6 +1,6 @@
 #include "Connection.hpp"
-#include "interface.hpp"
 #include "Exceptions.hpp"
+#include "interface.hpp"
 
 #include <boost/asio/basic_streambuf.hpp>
 #include <boost/asio/buffers_iterator.hpp>
@@ -12,9 +12,9 @@
 #include <boost/asio/streambuf.hpp>
 #include <boost/asio/write.hpp>
 
-#include <string>
-#include <iterator>
 #include <iostream>
+#include <iterator>
+#include <string>
 
 namespace asio = boost::asio;
 namespace ssl = asio::ssl;
@@ -24,7 +24,7 @@ namespace tcpip {
 
 struct SSL {
   ssl::context ctx;
-  ssl::stream<asio::ip::tcp::socket&> s;
+  ssl::stream<asio::ip::tcp::socket &> s;
   SSL(tcp::socket &sock) : ctx(ssl::context::tlsv12), s(sock, ctx) {}
 };
 
@@ -46,18 +46,32 @@ public:
     asio::ip::basic_resolver_iterator<boost::asio::ip::tcp> endpoints;
     try {
       endpoints = lookup(address, service, yield);
+    } catch (const boost::system::system_error &e) {
+      BOOST_THROW_EXCEPTION(DNSLookupError() << ei_hostname(address)
+                                             << ei_errcode(e.code())
+                                             << ei_orig(e.what()));
     } catch (const std::exception &e) {
-      throw DNSLookupError(address, e.what());
+      BOOST_THROW_EXCEPTION(DNSLookupError() << ei_hostname(address)
+                                             << ei_orig(e.what()));
     } catch (...) {
-      throw DNSLookupError(address, "Unkown");
+      BOOST_THROW_EXCEPTION(DNSLookupError() << ei_hostname(address)
+                                             << ei_orig("Unknown"));
     }
     // Connect the socket
     try {
       asio::async_connect(socket, endpoints, yield);
+    } catch (const boost::system::system_error &e) {
+      BOOST_THROW_EXCEPTION(ConnectionError()
+                            << ei_hostname(address) << ei_errcode(e.code())
+                            << ei_service(service) << ei_orig(e.what()));
     } catch (const std::exception &e) {
-      throw ConnectionError(address, service, e.what());
+      BOOST_THROW_EXCEPTION(ConnectionError() << ei_hostname(address)
+                                              << ei_service(service)
+                                              << ei_orig(e.what()));
     } catch (...) {
-      throw ConnectionError(address, service, "Unkown");
+      BOOST_THROW_EXCEPTION(ConnectionError() << ei_hostname(address)
+                                              << ei_service(service)
+                                              << ei_orig("Unknown"));
     }
     // Perform ssl startup if requested
     if (is_ssl) {
@@ -106,7 +120,7 @@ public:
         return;
       }
       // Something scary happened, log an error (throw an exception too)
-      throw SSLShutdownError(ec);
+      BOOST_THROW_EXCEPTION(SSLShutdownError() << ei_errcode(ec));
     }
     if (socket.is_open()) {
       socket.close();
@@ -114,13 +128,25 @@ public:
   }
 
   void send(const std::string &data) {
-    if (ssl)
-      asio::async_write(ssl->s, asio::buffer(data), yield);
-    else
-      asio::async_write(socket, asio::buffer(data), yield);
+    try {
+      if (ssl)
+        asio::async_write(ssl->s, asio::buffer(data), yield);
+      else
+        asio::async_write(socket, asio::buffer(data), yield);
+    } catch (boost::system::system_error &e) {
+      BOOST_THROW_EXCEPTION(send_err() << ei_errcode(e.code())
+                                       << ei_orig(e.what()) << ei_data(data)
+                                       << ei_numbytes(data.size()));
+    } catch (std::exception &e) {
+      BOOST_THROW_EXCEPTION(send_err() << ei_orig(e.what()) << ei_data(data)
+                                       << ei_numbytes(data.size()));
+    } catch (...) {
+      BOOST_THROW_EXCEPTION(send_err() << ei_orig("Unknown") << ei_data(data)
+                                       << ei_numbytes(data.size()));
+    }
   }
 
-  void recv(std::string &data, size_t size) { 
+  void recv(std::string &data, size_t size) {
     SpyGuard fromNet = spy(size);
     assert(fromNet.size() == size);
     data.reserve(data.size() + size);
@@ -150,61 +176,114 @@ public:
   }
 
   SpyGuard spy(size_t size) {
-    size_t startingSize = _buf.size();
-    size_t toGet = (startingSize < size) ? size - startingSize : 0;
-    if (ssl)
-      asio::async_read(ssl->s, _buf, asio::transfer_at_least(toGet), yield);
-    else
-      asio::async_read(socket, _buf, asio::transfer_at_least(toGet), yield);
-    assert(_buf.size() >= size);
-    const auto &buffers = _buf.data();
-    auto begin = asio::buffers_begin(buffers);
-    return spyGuard(begin, begin+size);
+    try {
+      size_t startingSize = _buf.size();
+      size_t toGet = (startingSize < size) ? size - startingSize : 0;
+      if (ssl)
+        asio::async_read(ssl->s, _buf, asio::transfer_at_least(toGet), yield);
+      else
+        asio::async_read(socket, _buf, asio::transfer_at_least(toGet), yield);
+      assert(_buf.size() >= size);
+      const auto &buffers = _buf.data();
+      auto begin = asio::buffers_begin(buffers);
+      return spyGuard(begin, begin + size);
+    } catch (boost::system::system_error &e) {
+      const auto &buffers = _buf.data();
+      auto begin = asio::buffers_begin(buffers);
+      auto end = asio::buffers_end(_buf.data());
+      BOOST_THROW_EXCEPTION(recv_err() << ei_errcode(e.code())
+                                       << ei_orig(e.what())
+                                       << ei_data(std::string(begin, end))
+                                       << ei_numbytes(std::distance(begin, end))
+                                       << ei_reqbytes(size));
+    } catch (std::exception &e) {
+      const auto &buffers = _buf.data();
+      auto begin = asio::buffers_begin(buffers);
+      auto end = asio::buffers_end(_buf.data());
+      BOOST_THROW_EXCEPTION(recv_err() << ei_orig(e.what())
+                                       << ei_data(std::string(begin, end))
+                                       << ei_numbytes(std::distance(begin, end))
+                                       << ei_reqbytes(size));
+    } catch (...) {
+      const auto &buffers = _buf.data();
+      auto begin = asio::buffers_begin(buffers);
+      auto end = asio::buffers_end(_buf.data());
+      BOOST_THROW_EXCEPTION(recv_err() << ei_orig("Unknown")
+                                       << ei_data(std::string(begin, end))
+                                       << ei_numbytes(std::distance(begin, end))
+                                       << ei_reqbytes(size));
+    }
   }
 
   SpyGuard spy(char delim) {
-    if (_buf.size() == 0) {
-      if (ssl) {
-        asio::async_read_until(ssl->s, _buf, delim, yield);
-      } else {
-        asio::async_read_until(socket, _buf, delim, yield);
+    try {
+      if (_buf.size() == 0) {
+        if (ssl) {
+          asio::async_read_until(ssl->s, _buf, delim, yield);
+        } else {
+          asio::async_read_until(socket, _buf, delim, yield);
+        }
       }
-    }
-    while (true) {
-      // First check if we already have it in the buffer from previous reads
-      // before trying to read it
-      // TODO: maybe we don't need to get the start every time; just the end
-      auto in = asio::buffers_begin(_buf.data());
-      auto eos = asio::buffers_end(_buf.data());
-      auto found = std::find(in, eos, delim);
-      if (found != eos)
-        return spyGuard(in, found + 1);
-      // The current buffer doesn't contain 'delim'.
-      // We need to read more data from the net.
-      // TODO: Maybe we need to specify a timeout and catch timeout errors here ..
-      if (ssl) {
-        asio::async_read_until(ssl->s, _buf, delim, yield);
-      } else {
-        asio::async_read_until(socket, _buf, delim, yield);
+      while (true) {
+        // First check if we already have it in the buffer from previous reads
+        // before trying to read it
+        // TODO: maybe we don't need to get the start every time; just the end
+        auto in = asio::buffers_begin(_buf.data());
+        auto eos = asio::buffers_end(_buf.data());
+        auto found = std::find(in, eos, delim);
+        if (found != eos)
+          return spyGuard(in, found + 1);
+        // The current buffer doesn't contain 'delim'.
+        // We need to read more data from the net.
+        // TODO: Maybe we need to specify a timeout and catch timeout errors
+        // here ..
+        if (ssl) {
+          asio::async_read_until(ssl->s, _buf, delim, yield);
+        } else {
+          asio::async_read_until(socket, _buf, delim, yield);
+        }
       }
+    } catch (boost::system::system_error &e) {
+      const auto &buffers = _buf.data();
+      auto begin = asio::buffers_begin(buffers);
+      auto end = asio::buffers_end(_buf.data());
+      BOOST_THROW_EXCEPTION(recv_err() << ei_errcode(e.code())
+                                       << ei_orig(e.what())
+                                       << ei_data(std::string(begin, end))
+                                       << ei_numbytes(std::distance(begin, end))
+                                       << ei_delim(delim));
+    } catch (std::exception &e) {
+      const auto &buffers = _buf.data();
+      auto begin = asio::buffers_begin(buffers);
+      auto end = asio::buffers_end(_buf.data());
+      BOOST_THROW_EXCEPTION(
+          recv_err() << ei_orig(e.what()) << ei_data(std::string(begin, end))
+                     << ei_numbytes(std::distance(begin, end)));
+    } catch (...) {
+      const auto &buffers = _buf.data();
+      auto begin = asio::buffers_begin(buffers);
+      auto end = asio::buffers_end(_buf.data());
+      BOOST_THROW_EXCEPTION(
+          recv_err() << ei_orig("Unknown") << ei_data(std::string(begin, end))
+                     << ei_numbytes(std::distance(begin, end)));
     }
   }
 
   SpyRange spyAvailable() {
     if (_buf.size() == 0) {
       if (ssl) {
-        asio::async_read(ssl->s, _buf, boost::asio::transfer_at_least(1), yield);
+        asio::async_read(ssl->s, _buf, boost::asio::transfer_at_least(1),
+                         yield);
       } else {
-        asio::async_read(socket, _buf, boost::asio::transfer_at_least(1), yield);
+        asio::async_read(socket, _buf, boost::asio::transfer_at_least(1),
+                         yield);
       }
     }
     const auto &buffers = _buf.data();
     return SpyRange(asio::buffers_begin(buffers), asio::buffers_end(buffers));
   }
 
-  void consume(size_t size) {
-    _buf.consume(size);
-  }
+  void consume(size_t size) { _buf.consume(size); }
 };
 
 Connection::Connection(std::string address, std::string service,
@@ -221,7 +300,7 @@ void Connection::recv(std::ostream &data, size_t size) { m->recv(data, size); }
 SpyGuard Connection::spy(char delim) { return m->spy(delim); }
 SpyGuard Connection::spy(size_t size) { return m->spy(size); }
 void Connection::consume(size_t size) { m->consume(size); }
-yield_context& Connection::yield() {return m->yield; }
+yield_context &Connection::yield() { return m->yield; }
 
 } // tcpip
-} /* RESTClient */ 
+} /* RESTClient */
