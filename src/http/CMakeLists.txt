@@ -1,9 +1,8 @@
 project(http)
 
-add_library(http SHARED url.cpp Request.cpp interface.cpp ReadResponse.cpp interface.cpp io_source_chunked.cpp)
+add_library(http STATIC url.cpp Request.cpp interface.cpp ReadResponse.cpp interface.cpp io_source_chunked.cpp)
 
-
-target_link_libraries(http tcpip ${CPP} ${Boost_SYSTEM_LIBRARY} ${Boost_COROUTINE_LIBRARY} ${Boost_IOSTREAMS_LIBRARY} ${OPENSSL_LIBRARIES})
+target_link_libraries(http tcpip ${Boost_IOSTREAMS_LIBRARY})
 
 if (ENABLE_TESTS)
   add_executable(test_url test_url.cpp)

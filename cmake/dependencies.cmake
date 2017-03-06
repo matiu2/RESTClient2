@@ -1,6 +1,10 @@
 # C++
 find_library(CPP c++)
 
+# Lib sup c++
+find_library(SUP_CPP supc++
+             HINTS /usr/lib/gcc/x86_64-linux-gnu/5)
+
 # Threads
 find_package(Threads)
 
