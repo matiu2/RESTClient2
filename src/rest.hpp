@@ -7,7 +7,7 @@
 
 #include <string>
 #include "http/interface.hpp"
-#include "url_parser.hpp"
+#include "http/url.hpp"
 
 namespace RESTClient {
 
@@ -18,11 +18,10 @@ private:
   tcpip::Connection conn;
 
 public:
-  REST(http::yield_context &yield, const URL &baseURL,
+  REST(http::yield_context &yield, const http::URL &baseURL,
        RESTClient::http::Headers baseHeaders = {})
-      : baseURL(baseURL.url()), baseHeaders(std::move(baseHeaders)),
-        conn(baseURL.hostname, baseURL.protocol, yield,
-             baseURL.protocol == "https") {
+      : baseURL(baseURL.whole()), baseHeaders(std::move(baseHeaders)),
+        conn(baseURL.hostname, baseURL.protocol, yield, baseURL.is_ssl()) {
     // We don't want the '/' to be on the end of the baseURL; we add it on to
     // every request if needed
     if (this->baseURL.back() == '/')

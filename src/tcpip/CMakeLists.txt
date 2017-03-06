@@ -9,3 +9,11 @@ if (ENABLE_TESTS)
   target_link_libraries(test_tcpip tcpip)
   add_test(test_tcpip test_tcpip)
 endif()
+
+install(FILES 
+            Connection.hpp
+            Exceptions.hpp
+            SpyGuard.hpp
+            interface.hpp
+        DESTINATION
+            include/RESTClient/tcpip)

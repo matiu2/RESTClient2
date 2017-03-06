@@ -14,3 +14,17 @@ if (ENABLE_TESTS)
   target_link_libraries(test_request http)
   add_test(test_request test_request)
 endif()
+
+install(FILES 
+            BodyDecoders.hpp
+            Headers.hpp
+            ReadResponse.hpp
+            Request.hpp
+            Response.hpp
+            interface.hpp
+            io_source_chunked.hpp
+            io_source_tcpip.hpp
+            sendBody.hpp
+            url.hpp
+        DESTINATION
+            include/RESTClient/tcpip)

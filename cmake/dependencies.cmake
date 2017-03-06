@@ -27,6 +27,7 @@ ExternalProject_Add(jsonpp11
                      "-DCMAKE_BUILD_TYPE:string=RELEASE"
                      "-DBUILD_TESTS:boolean=OFF"
     TLS_VERIFY true
+    GIT_TAG jsonpp14
     TLS_CAINFO certs/DigiCertHighAssuranceEVRootCA.crt
     TEST_BEFORE_INSTALL 0
     BUILD_COMMAND make

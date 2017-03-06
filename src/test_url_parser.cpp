@@ -1,5 +1,5 @@
 /// Tests the url_parser
-#include "url_parser.hpp"
+#include "http/url.hpp"
 
 #include <cassert>
 #include <string>
@@ -19,7 +19,7 @@ struct Test {
   unsigned short port;
   map<string, string> params;
 
-  RESTClient::URL parts;
+  RESTClient::http::URL parts;
   Test(string url, string protocol, string hostname, string path = "",
        string username = "", string password = "", unsigned short port = 0,
        map<string, string> params = {})
@@ -103,7 +103,7 @@ struct Test {
     }
 
     // Now get the url back out of it
-    auto new_url = parts.url();
+    auto new_url = parts.whole();
     if (url != new_url) {
       msg << "URL (" << url << ") didn't convert back the same (" << new_url
           << ")\n";
