@@ -20,5 +20,8 @@ std::shared_ptr<io_service> getService();
 tcp::resolver::iterator lookup(std::string address, std::string service,
                                yield_context yield);
 
+Connection connect(std::string address, std::string service,
+                   yield_context yield, bool is_ssl = false);
+
 } // tcpip 
 } /* RESTClient */ 

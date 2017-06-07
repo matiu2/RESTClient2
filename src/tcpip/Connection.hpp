@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../pimpl.hpp"
-#include "interface.hpp"
 #include "SpyGuard.hpp"
 
 #include <boost/asio/spawn.hpp>
@@ -25,21 +24,22 @@ private:
 public:
   Connection(std::string address, std::string service, yield_context yield,
              bool is_ssl = false);
+  Connection(Connection &&other);
   ~Connection();
   /// Send data through the internet
-  void send(const std::string& data);
+  void send(const std::string &data);
 
   /// Receive exactly 'size' bytes and move it into a string
-  void recv(std::string& data, size_t size);
+  void recv(std::string &data, size_t size);
 
   /// Receive until we hit some deliminator and move it into a string
-  void recv(std::string& data, char delim);
+  void recv(std::string &data, char delim);
 
   /// Receive a line and move it int a string
-  void recv(std::string& data) { recv(data, '\n'); }
+  void recv(std::string &data) { recv(data, '\n'); }
 
   /// Recieve 'n' bytes into a stream
-  void recv(std::ostream& data, size_t size);
+  void recv(std::ostream &data, size_t size);
 
   /// Copy-free 'recv' of  'size' bytes, then return an iterator allowing you to
   /// 'spy' on the buffer. You must run consume after you're done looking at the
@@ -55,7 +55,7 @@ public:
   /// Wipe out the buffer we don't need any more after 'spy'ing it
   void consume(size_t size);
 
-  yield_context& yield();
+  yield_context &yield();
 };
 
 } // tcpip

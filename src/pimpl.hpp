@@ -19,7 +19,7 @@ template <typename T> pimpl<T>::pimpl() : m{new T{}} {}
 
 template <typename T>
 template <typename... Args>
-pimpl<T>::pimpl(Args &&... args) : m{new T{std::forward<Args>(args)...}} {}
+pimpl<T>::pimpl(Args &&... args) : m{new T(std::forward<Args>(args)...)} {}
 
 template <typename T> pimpl<T>::~pimpl() {}
 

@@ -31,5 +31,10 @@ tcp::resolver::iterator lookup(std::string address, std::string service,
   return resolver().async_resolve(q, yield);
 }
 
+Connection connect(std::string address, std::string service,
+                   yield_context yield, bool is_ssl) {
+  return Connection(address, service, yield, is_ssl);
+}
+
 } // tcpip 
 } /* RESTClient */ 
