@@ -26,4 +26,4 @@ install(FILES
             sendBody.hpp
             url.hpp
         DESTINATION
-            include/RESTClient/tcpip)
+            include/RESTClient/http)
