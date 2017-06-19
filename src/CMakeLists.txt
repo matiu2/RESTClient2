@@ -34,6 +34,6 @@ if (ENABLE_TESTS)
   add_test(test_cloud_files_upload test_cloud_files_upload)
 endif()
 
-install(FILES rest.hpp pipml.hpp
+install(FILES rest.hpp pimpl.hpp
         DESTINATION include/RESTClient)
 install(TARGETS RESTClient LIBRARY DESTINATION lib)
