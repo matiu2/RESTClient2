@@ -1,8 +1,7 @@
 project(http)
 
-add_library(http STATIC url.cpp Request.cpp interface.cpp ReadResponse.cpp interface.cpp io_source_chunked.cpp)
-
-target_link_libraries(http tcpip ${Boost_IOSTREAMS_LIBRARY})
+add_library(http url.cpp Request.cpp interface.cpp ReadResponse.cpp io_source_chunked.cpp)
+target_link_libraries(http ${Boost_IOSTREAMS_LIBRARY})
 
 if (ENABLE_TESTS)
   add_executable(test_url test_url.cpp)
@@ -10,7 +9,7 @@ if (ENABLE_TESTS)
   add_test(test_url test_url)
 
   add_executable(test_request test_request.cpp)
-  target_link_libraries(test_request http)
+  target_link_libraries(test_request http tcpip)
   add_test(test_request test_request)
 endif()
 

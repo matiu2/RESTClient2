@@ -9,7 +9,7 @@ if (ENABLE_TESTS)
 endif()
  
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -fstandalone-debug -fwritable-strings -fno-builtin"
-      CACHE STRING "Flags used by the compiler during debug builds." FORCE)
+    CACHE STRING "Flags used by the compiler during debug builds." FORCE)
 
 if(${IS_CLANG})
     add_definitions(-fPIC -std=c++1z -stdlib=libc++)
