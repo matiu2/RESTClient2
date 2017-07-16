@@ -9,7 +9,7 @@ find_library(SUP_CPP supc++
 find_package(Threads)
 
 # Boost
-FIND_PACKAGE(Boost 1.62 REQUIRED COMPONENTS system coroutine iostreams)
+FIND_PACKAGE(Boost 1.58 REQUIRED COMPONENTS system coroutine iostreams)
 include_directories(${Boost_INCLUDE_DIR})
 
 # OpenSSL (boost needs it)
