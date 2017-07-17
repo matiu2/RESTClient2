@@ -7,13 +7,11 @@ option(ENABLE_TESTS "Enable building and running of tests?" ON)
 if (ENABLE_TESTS)
   enable_testing()
 endif()
- 
-set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -fstandalone-debug -fwritable-strings -fno-builtin"
-      CACHE STRING "Flags used by the compiler during debug builds." FORCE)
 
-if(${IS_CLANG})
-    add_definitions(-fPIC -std=c++1z -stdlib=libc++)
-endif()
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1z -stdlib=libc++ -fPIC")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0 -fstandalone-debug -fwritable-strings -fno-builtin")
+
+include_directories("/usr/include/libcxxabi")
 
 add_definitions(-DBOOST_COROUTINES_NO_DEPRECATION_WARNING)
 

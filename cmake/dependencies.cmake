@@ -10,7 +10,11 @@ find_package(Threads)
 
 # Boost
 FIND_PACKAGE(Boost 1.58 REQUIRED COMPONENTS system coroutine iostreams)
-include_directories(${OPENSSL_INCLUDE_DIR} ${OPENSSL_LIBRARIES})
+include_directories(${Boost_INCLUDE_DIR})
+
+# OpenSSL (boost needs it)
+FIND_PACKAGE(OpenSSL REQUIRED)
+include_directories(${OPENSSL_INCLUDE_DIR})
 
 if (${ENABLE_TESTS})
   FIND_PACKAGE(Boost 1.58 REQUIRED COMPONENTS regex)
