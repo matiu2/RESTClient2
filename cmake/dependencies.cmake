@@ -1,3 +1,5 @@
+include(ExternalProject)
+
 # C++
 find_library(CPP c++)
 
@@ -42,7 +44,6 @@ FIND_PACKAGE(OpenSSL REQUIRED)
 include_directories(${OPENSSL_INCLUDE_DIR} ${OPENSSL_LIBRARIES})
 
 # jsonpp11 - JSON wrapper
-include(ExternalProject)
 
 ExternalProject_Add(jsonpp11
     PREFIX 3rd_party
