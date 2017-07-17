@@ -18,7 +18,7 @@ private:
   tcpip::Connection conn;
 
 public:
-  REST(http::yield_context &yield, const http::URL &baseURL,
+  REST(http::yield_context &yield, http::URL baseURL,
        RESTClient::http::Headers baseHeaders = {})
       : baseURL(baseURL.whole()), baseHeaders(std::move(baseHeaders)),
         conn(baseURL.hostname, baseURL.protocol, yield, baseURL.is_ssl()) {

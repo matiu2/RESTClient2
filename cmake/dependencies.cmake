@@ -9,12 +9,29 @@ find_library(SUP_CPP supc++
 find_package(Threads)
 
 # Boost
-FIND_PACKAGE(Boost 1.62 REQUIRED COMPONENTS system coroutine iostreams)
+FIND_PACKAGE(Boost 1.58 REQUIRED COMPONENTS system coroutine iostreams)
 include_directories(${OPENSSL_INCLUDE_DIR} ${OPENSSL_LIBRARIES})
 
 if (${ENABLE_TESTS})
-  FIND_PACKAGE(Boost 1.62 REQUIRED COMPONENTS regex)
+  FIND_PACKAGE(Boost 1.58 REQUIRED COMPONENTS regex)
 endif(${ENABLE_TESTS})
+
+## Boost hana (not yet available in 1.58) (header only library)
+ExternalProject_Add(hana
+    PREFIX 3rd_party
+    GIT_REPOSITORY https://github.com/boostorg/hana.git
+    GIT_TAG v1.2.0
+    GIT_SHALLOW 1
+    TLS_VERIFY true
+    TLS_CAINFO certs/DigiCertHighAssuranceEVRootCA.crt
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    UPDATE_COMMAND "" # Skip annoying updates for every build
+    INSTALL_COMMAND ""
+)
+SET(HANA_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/3rd_party/src/hana/include)
+INCLUDE_DIRECTORIES(${HANA_INCLUDE_DIR})
+
 
 # OpenSSL
 FIND_PACKAGE(OpenSSL REQUIRED)
