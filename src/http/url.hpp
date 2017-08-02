@@ -27,8 +27,6 @@ struct URL {
   operator std::string() const { return whole(); }
 };
 URL& operator /(URL& a, const std::string& b);
-URL operator /(URL a, const std::string& b);
-
   
 } /* http */ 
 } /* RESTClient */ 

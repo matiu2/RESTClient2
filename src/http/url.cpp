@@ -184,17 +184,6 @@ URL& operator /(URL& a, const std::string& b) {
   return a;
 }
 
-URL operator /(URL a, const std::string& b) {
-  std::string& path(a.path);
-  if (((!path.empty()) && (path.front() == '/')) ||
-      ((!b.empty()) && (b.front() == '/')))
-    a.path += b;
-  else
-    a.path += "/" + b;
-  return a;
-}
-
-
 } /* http */
 } /* RESTClient  */ 
 
