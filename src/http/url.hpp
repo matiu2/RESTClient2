@@ -24,9 +24,11 @@ struct URL {
   std::string path_part() const;
   URL& operator =(const std::string& url);
   bool is_ssl() const { return protocol == "https"; }
+  operator std::string() const { return whole(); }
 };
-
 URL& operator /(URL& a, const std::string& b);
+URL operator /(URL a, const std::string& b);
+
   
 } /* http */ 
 } /* RESTClient */ 
