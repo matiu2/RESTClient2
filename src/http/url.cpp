@@ -176,7 +176,7 @@ std::string URL::whole() const {
 
 URL& operator /(URL& a, const std::string& b) {
   std::string& path(a.path);
-  if (((!path.empty()) && (path.front() == '/')) ||
+  if (((!path.empty()) && (path.back() == '/')) ||
       ((!b.empty()) && (b.front() == '/')))
     a.path += b;
   else
