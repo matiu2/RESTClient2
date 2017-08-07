@@ -33,6 +33,12 @@ public:
     else
       return http::get(conn, baseURL + path).headers(baseHeaders);
   }
+  inline http::Request head(const std::string &path) {
+    if ((path.empty()) || (path.front() != '/'))
+      return http::head(conn, baseURL + '/' + path).headers(baseHeaders);
+    else
+      return http::head(conn, baseURL + path).headers(baseHeaders);
+  }
   inline http::Request put(const std::string &path) {
     if ((path.empty()) || (path.front() != '/'))
       return http::put(conn, baseURL + '/' + path).headers(baseHeaders);

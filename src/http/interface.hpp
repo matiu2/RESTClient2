@@ -20,6 +20,10 @@ inline Request get(tcpip::Connection &conn, const std::string &url) {
   return request(conn, url).verb("GET");
 }
 
+inline Request head(tcpip::Connection &conn, const std::string &url) {
+  return request(conn, url).verb("HEAD");
+}
+
 inline Request post(tcpip::Connection &conn, const std::string &url) {
   return request(conn, url).verb("POST");
 }
