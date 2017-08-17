@@ -14,9 +14,10 @@ namespace http {
 /// Transmits the headers; if an item is duplicated in both sets; extra_headers takes presedence.
 void transmitHeaders(const Headers *defaultHeaders,
                      const Headers &extra_headers, tcpip::Connection &conn) {
+  LOG_SCOPE_FUNCTION(INFO);
   DLOG_S(9) << "Sending headers for Request";
   auto sendHeader = [&](const auto &header) {
-      DLOG_S(9) << header.first;
+      DLOG_S(8) << header.first << ": " << header.second;
       conn.send(header.first);
       conn.send(": ");
       conn.send(header.second);

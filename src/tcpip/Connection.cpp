@@ -1,6 +1,7 @@
 #include "Connection.hpp"
 #include "Exceptions.hpp"
 #include "interface.hpp"
+#include "../logging.hpp"
 
 #include <boost/asio/basic_streambuf.hpp>
 #include <boost/asio/buffers_iterator.hpp>
@@ -135,6 +136,7 @@ public:
   }
 
   void send(const std::string &data) {
+    DLOG_S(9) << "Sending data: " << data;
     try {
       if (ssl)
         asio::async_write(ssl->s, asio::buffer(data), yield);
