@@ -3,6 +3,7 @@
 #include "url.hpp"
 #include "sendBody.hpp"
 #include "ReadResponse.hpp"
+#include "../logging.hpp"
 
 #include <sstream>
 #include <boost/optional.hpp>
@@ -13,7 +14,9 @@ namespace http {
 /// Transmits the headers; if an item is duplicated in both sets; extra_headers takes presedence.
 void transmitHeaders(const Headers *defaultHeaders,
                      const Headers &extra_headers, tcpip::Connection &conn) {
+  DLOG_S(9) << "Sending headers for Request";
   auto sendHeader = [&](const auto &header) {
+      DLOG_S(9) << header.first;
       conn.send(header.first);
       conn.send(": ");
       conn.send(header.second);

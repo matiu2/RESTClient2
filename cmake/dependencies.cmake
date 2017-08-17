@@ -1,18 +1,43 @@
 include(ExternalProject)
 
 # C++
-find_library(CPP c++)
+find_library(CPP NAMES c++.a c++)
+
+# C++ ABI
+find_library(CPP_ABI NAMES c++abi.a c++abi)
 
 # Lib sup c++
 find_library(SUP_CPP supc++
              HINTS /usr/lib/gcc/x86_64-linux-gnu/5)
 
 # Threads
-find_package(Threads)
+find_package(Threads REQUIRED)
 
 # Boost
-FIND_PACKAGE(Boost 1.58 REQUIRED COMPONENTS system coroutine iostreams)
+set(Boost_USE_STATIC_LIBS ON)
+FIND_PACKAGE(Boost REQUIRED COMPONENTS system thread exception context coroutine iostreams)
 include_directories(${Boost_INCLUDE_DIR})
+
+# dl
+find_library(dl dl)
+
+# z
+find_library(z NAMES z.a z)
+
+# Log guru
+ExternalProject_Add(loguru
+    PREFIX 3rd_party
+    GIT_REPOSITORY https://github.com/emilk/loguru.git
+    GIT_SHALLOW 1
+    TLS_VERIFY true
+    TLS_CAINFO certs/DigiCertHighAssuranceEVRootCA.crt
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    UPDATE_COMMAND "" # Skip annoying updates for every build
+    INSTALL_COMMAND ""
+)
+SET(LOGURU_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/3rd_party/src/loguru)
+INCLUDE_DIRECTORIES(${LOGURU_INCLUDE_DIR})
 
 # OpenSSL (boost needs it)
 FIND_PACKAGE(OpenSSL REQUIRED)
