@@ -3,6 +3,7 @@
 #include "../tcpip/interface.hpp"
 #include "io_source_tcpip.hpp"
 #include "io_source_chunked.hpp"
+#include "../logging.hpp"
 
 #include <string>
 #include <sstream>
@@ -49,6 +50,7 @@ size_t getContentLength(const Headers& headers) {
   for (const auto& pair : headers) {
     msg << pair.first << ": " << pair.second << '\n';
   }
+  LOG_S(ERROR) << "Unable to get content length: " << msg.str();
   throw std::runtime_error(msg.str());
 }
 
@@ -78,6 +80,7 @@ void readHeadersPart(tcpip::Connection &conn, Response &out) {
         line.begin(), line.end(), header_parser::firstLine,
         header_parser::spacer, firstLineOut);
     if (!ok) {
+      LOG_S(ERROR) << "Unable to parse first line: '" << line << "'";
       throw std::runtime_error("Unable to parse first line: '"s + line + "'");
     }
   }
@@ -93,6 +96,7 @@ void readHeadersPart(tcpip::Connection &conn, Response &out) {
                                               header_parser::header,
                                               header_parser::spacer, parsed);
     if (!ok) {
+      LOG_S(ERROR) << "Unable to parse header: '" << line << "'";
       throw std::runtime_error("Unable to parse header: '"s + line + "'");
     }
     out.headers.emplace(std::move(key), std::move(val));
