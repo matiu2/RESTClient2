@@ -75,7 +75,8 @@ namespace RESTClient {
       // Read the first line
       {
         auto firstLineOut = boost::fusion::vector_tie(out.code, out.ok);
-        auto line = conn.spy('\n');
+        auto lineTemp = conn.spy('\n');
+        std::string line(lineTemp.begin(), lineTemp.end());
         LOG_S(7) << "First line of response: " << line;
         bool ok = boost::spirit::x3::phrase_parse(
             line.begin(), line.end(), header_parser::firstLine,
