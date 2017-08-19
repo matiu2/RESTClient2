@@ -82,7 +82,7 @@ Response Request::go() const {
   conn.send("Host: ");
   conn.send(url.hostname);
   conn.send("\r\n");
-  /// Returns the content length if it was set in any headers
+  // Returns the content length if it was set in any headers
   // Send the headers
   transmitHeaders(_headers, extra_headers, conn);
   // See if we're sending a Content-Length header or transmitting in chunked
@@ -105,7 +105,7 @@ Response Request::go() const {
       // We have no body
       if (!contentLength) {
         // If we haven't sent the content length, send it now
-        conn.send("Content-Length: 0\r\n");
+        conn.send("Content-Length: 0\r\n\r\n");
       }
     }
   }
