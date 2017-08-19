@@ -14,8 +14,8 @@ namespace http {
 /// Transmits the headers; if an item is duplicated in both sets; extra_headers takes presedence.
 void transmitHeaders(const Headers *defaultHeaders,
                      const Headers &extra_headers, tcpip::Connection &conn) {
-  LOG_SCOPE_FUNCTION(INFO);
-  DLOG_S(9) << "Sending headers for Request";
+  LOG_SCOPE_FUNCTION(5);
+  DLOG_S(8) << "Sending headers for Request";
   auto sendHeader = [&](const auto &header) {
       DLOG_S(8) << header.first << ": " << header.second;
       conn.send(header.first);
@@ -24,15 +24,22 @@ void transmitHeaders(const Headers *defaultHeaders,
       conn.send("\r\n");
   };
   if (defaultHeaders) {
+    DLOG_S(8) << "Sending default headers";
     for (const auto& header: *defaultHeaders) {
       auto found = extra_headers.find(header.first);
       // Only send headers that aren't in extra_headers already
-      if (found == extra_headers.end())
+      if (found == extra_headers.end()) {
+        DLOG_S(8) << "Sending default header: " << header.first << ": "
+                  << header.second;
         sendHeader(header);
+      }
     }
   }
-  for (const auto &header : extra_headers)
+  for (const auto &header : extra_headers) {
+        DLOG_S(8) << "Sending extra header: " << header.first << ": "
+                  << header.second;
     sendHeader(header);
+  }
 }
 
 /// Returns the value of a header if it exists
