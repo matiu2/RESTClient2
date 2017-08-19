@@ -72,10 +72,12 @@ Response Request::go() const {
   // Get a TCP/IP connection from the connection pool
   URL url(this->url);
   // Send the request line
+  LOG_S(8) << "Request: " << _verb << " " << url.path_part() << " HTTP/1.1";
   conn.send(_verb + ' ');
   conn.send(url.path_part());
   conn.send(" HTTP/1.1\r\n");
   // Send the Host header
+  LOG_S(8) << "   Host: " << url.hostname;
   conn.send("Host: ");
   conn.send(url.hostname);
   conn.send("\r\n");
