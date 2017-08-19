@@ -79,6 +79,8 @@ void readHeadersPart(tcpip::Connection &conn, Response &out) {
     bool ok = boost::spirit::x3::phrase_parse(
         line.begin(), line.end(), header_parser::firstLine,
         header_parser::spacer, firstLineOut);
+    LOG_S(8) << "First line of response: code(" << out.code << ") ok(" << out.ok
+             << ") line(" << line << ")";
     if (!ok) {
       LOG_S(ERROR) << "Unable to parse first line: '" << line << "'";
       throw std::runtime_error("Unable to parse first line: '"s + line + "'");
@@ -90,6 +92,7 @@ void readHeadersPart(tcpip::Connection &conn, Response &out) {
     std::string key, val;
     auto parsed = boost::fusion::vector_tie(key, val);
     auto line = conn.spy('\n');
+    LOG_S(8) << "Reading header line: " << line;
     if (line == "\r\n")
       break;
     bool ok = boost::spirit::x3::phrase_parse(line.begin(), line.end(),
