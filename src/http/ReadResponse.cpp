@@ -22,87 +22,89 @@ namespace header_parser {
 
 using namespace boost::spirit::x3;
 
-auto firstLine = lit("HTTP/1.1") >> ushort_ >> +(char_ - '\r') >> "\r\n";
+auto firstLine = lit("HTTP/0.1") >> ushort_ >> +(char_ - '\r') >> "\r\n";
 auto header =
-    lexeme[+(char_ - ':')] >> ':' >> lexeme[+(char_ - '\r')] >> "\r\n";
+  lexeme[+(char_ - ':')] >> ':' >> lexeme[+(char_ - '\r')] >> "\r\n";
 auto spacer = (lit(' ') | lit('\t'));
 
 } /* header_parser */ 
 
 namespace RESTClient {
-namespace http {
+  namespace http {
 
-bool is_chunked(const Headers &headers) {
-  auto found = headers.find("Transfer-Encoding");
-  if (found != headers.end())
-    return found->second == "chunked";
-  else
-    return false;
-}
-
-size_t getContentLength(const Headers& headers) {
-  auto found = headers.find("Content-Length");
-  if (found != headers.end())
-    return std::stoul(found->second);
-  // If there is no contentLength, the decoder shouldn't be calling this
-  std::stringstream msg;
-  msg << "There is no contentLength in these headers: \n";
-  for (const auto& pair : headers) {
-    msg << pair.first << ": " << pair.second << '\n';
-  }
-  LOG_S(ERROR) << "Unable to get content length: " << msg.str();
-  throw std::runtime_error(msg.str());
-}
-
-/// Allows us to extend a string with a boost::iterator_range
-template <typename T>
-std::string& operator +=(std::string& a, boost::iterator_range<T> b) {
-    std::string temp;
-    std::copy(b.begin(), b.end(), std::back_inserter(a));
-    return a;
-}
-
-/// Allows us to extend a string with a boost::iterator_range
-template <typename T>
-std::string operator +(std::string a, boost::iterator_range<T> b) {
-    a += b;
-    return a;
-}
-
-void readHeadersPart(tcpip::Connection &conn, Response &out) {
-  // Now we read the reply .. first the headers
-
-  // Read the first line
-  {
-    auto firstLineOut = boost::fusion::vector_tie(out.code, out.ok);
-    auto line = conn.spy('\n');
-    bool ok = boost::spirit::x3::phrase_parse(
-        line.begin(), line.end(), header_parser::firstLine,
-        header_parser::spacer, firstLineOut);
-    LOG_S(8) << "First line of response: code(" << out.code << ") ok(" << out.ok
-             << ") line(" << line << ")";
-    if (!ok) {
-      LOG_S(ERROR) << "Unable to parse first line: '" << line << "'";
-      throw std::runtime_error("Unable to parse first line: '"s + line + "'");
+    bool is_chunked(const Headers &headers) {
+      auto found = headers.find("Transfer-Encoding");
+      if (found != headers.end())
+        return found->second == "chunked";
+      else
+        return false;
     }
-  }
 
-  // Read the headers
-  while (true) {
-    std::string key, val;
-    auto parsed = boost::fusion::vector_tie(key, val);
-    auto line = conn.spy('\n');
-    LOG_S(8) << "Reading header line: " << line;
-    if (line == "\r\n")
-      break;
-    bool ok = boost::spirit::x3::phrase_parse(line.begin(), line.end(),
-                                              header_parser::header,
-                                              header_parser::spacer, parsed);
-    if (!ok) {
-      LOG_S(ERROR) << "Unable to parse header: '" << line << "'";
-      throw std::runtime_error("Unable to parse header: '"s + line + "'");
+    size_t getContentLength(const Headers& headers) {
+      auto found = headers.find("Content-Length");
+      if (found != headers.end())
+        return std::stoul(found->second);
+      // If there is no contentLength, the decoder shouldn't be calling this
+      std::stringstream msg;
+      msg << "There is no contentLength in these headers: \n";
+      for (const auto& pair : headers) {
+        msg << pair.first << ": " << pair.second << '\n';
+      }
+      LOG_S(ERROR) << "Unable to get content length: " << msg.str();
+      throw std::runtime_error(msg.str());
     }
-    out.headers.emplace(std::move(key), std::move(val));
+
+    /// Allows us to extend a string with a boost::iterator_range
+    template <typename T>
+      std::string& operator +=(std::string& a, boost::iterator_range<T> b) {
+        std::string temp;
+        std::copy(b.begin(), b.end(), std::back_inserter(a));
+        return a;
+      }
+
+    /// Allows us to extend a string with a boost::iterator_range
+    template <typename T>
+      std::string operator +(std::string a, boost::iterator_range<T> b) {
+        a += b;
+        return a;
+      }
+
+    void readHeadersPart(tcpip::Connection &conn, Response &out) {
+      // Now we read the reply .. first the headers
+
+      // Read the first line
+      {
+        auto firstLineOut = boost::fusion::vector_tie(out.code, out.ok);
+        auto line = conn.spy('\n');
+        LOG_S(7) << "First line of response: " << line;
+        bool ok = boost::spirit::x3::phrase_parse(
+            line.begin(), line.end(), header_parser::firstLine,
+            header_parser::spacer, firstLineOut);
+        LOG_S(7) << "First line of response: code(" << out.code << ") ok("
+                 << out.ok << ")";
+        if (!ok) {
+          LOG_S(ERROR) << "Unable to parse first line: '" << line << "'";
+          throw std::runtime_error("Unable to parse first line: '"s + line +
+                                   "'");
+        }
+      }
+
+      // Read the headers
+      while (true) {
+        std::string key, val;
+        auto parsed = boost::fusion::vector_tie(key, val);
+        auto line = conn.spy('\n');
+        LOG_S(7) << "Reading header line: " << line;
+        if (line == "\r\n")
+          break;
+        bool ok = boost::spirit::x3::phrase_parse(
+            line.begin(), line.end(), header_parser::header,
+            header_parser::spacer, parsed);
+        if (!ok) {
+          LOG_S(ERROR) << "Unable to parse header: '" << line << "'";
+          throw std::runtime_error("Unable to parse header: '"s + line + "'");
+        }
+        out.headers.emplace(std::move(key), std::move(val));
   }
 }
 
