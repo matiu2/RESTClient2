@@ -94,7 +94,8 @@ namespace RESTClient {
       while (true) {
         std::string key, val;
         auto parsed = boost::fusion::vector_tie(key, val);
-        auto line = conn.spy('\n');
+        auto lineTemp = conn.spy('\n');
+        std::string line(lineTemp.begin(), lineTemp.end());
         LOG_S(7) << "Reading header line: " << line;
         if (line == "\r\n")
           break;
