@@ -161,6 +161,7 @@ public:
     data.reserve(data.size() + size);
     std::copy(fromNet.begin(), fromNet.begin() + size,
               std::back_inserter(data));
+    DLOG_S(9) << "Received data: " << data;
   }
 
   void recv(std::string &out, char delim) {
@@ -170,6 +171,7 @@ public:
     auto sz = std::distance(buf.begin(), found);
     out.reserve(out.size() + sz);
     std::copy(buf.begin(), found, std::back_inserter(out));
+    DLOG_S(9) << "Received data: " << out;
   }
 
   /// Recieve 'n' bytes into a stream
