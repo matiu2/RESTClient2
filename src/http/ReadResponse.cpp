@@ -22,7 +22,7 @@ namespace header_parser {
 
 using namespace boost::spirit::x3;
 
-auto firstLine = lit("HTTP/0.1") >> ushort_ >> +(char_ - '\r') >> "\r\n";
+auto firstLine = lit("HTTP/1.1") >> ushort_ >> +(char_ - '\r') >> "\r\n";
 auto header =
   lexeme[+(char_ - ':')] >> ':' >> lexeme[+(char_ - '\r')] >> "\r\n";
 auto spacer = (lit(' ') | lit('\t'));
@@ -77,7 +77,7 @@ namespace RESTClient {
         auto firstLineOut = boost::fusion::vector_tie(out.code, out.ok);
         auto lineTemp = conn.spy('\n');
         std::string line(lineTemp.begin(), lineTemp.end());
-        LOG_S(7) << "First line of response: " << line;
+        LOG_S(8) << "First line of response: " << line;
         bool ok = boost::spirit::x3::phrase_parse(
             line.begin(), line.end(), header_parser::firstLine,
             header_parser::spacer, firstLineOut);
