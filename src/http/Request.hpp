@@ -22,9 +22,7 @@ private:
   std::string _verb = "GET";
 
 public:
-  Request(tcpip::Connection &aConn, std::string url) : conn(aConn), url(url) {
-    set_header("Accept-Encoding", "gzip, deflate");
-  }
+  Request(tcpip::Connection &aConn, std::string url) : conn(aConn), url(url) {}
   /// Set the default headers. Calls to set_header later will override anything
   /// in here with the same key
   Request &headers(const Headers &newHeaders) {
