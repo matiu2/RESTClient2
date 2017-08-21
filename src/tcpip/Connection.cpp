@@ -136,7 +136,9 @@ public:
   }
 
   void send(const std::string &data) {
+    #ifdef LOG_THE_WIRE
     DLOG_S(9) << "Sending data: " << data;
+    #endif
     try {
       if (ssl)
         asio::async_write(ssl->s, asio::buffer(data), yield);
@@ -161,7 +163,9 @@ public:
     data.reserve(data.size() + size);
     std::copy(fromNet.begin(), fromNet.begin() + size,
               std::back_inserter(data));
+    #ifdef LOG_THE_WIRE
     DLOG_S(9) << "Received data: " << data;
+    #endif
   }
 
   void recv(std::string &out, char delim) {
@@ -171,13 +175,21 @@ public:
     auto sz = std::distance(buf.begin(), found);
     out.reserve(out.size() + sz);
     std::copy(buf.begin(), found, std::back_inserter(out));
+    #ifdef LOG_THE_WIRE
     DLOG_S(9) << "Received data: " << out;
+    #endif
   }
 
   /// Recieve 'n' bytes into a stream
   void recv(std::ostream &data, size_t size) {
     SpyGuard buf = spy(size);
+    #ifdef LOG_THE_WIRE
+    std::string temp(buf.begin(), buf.end());
+    DLOG_S(9) << "Received data: " << temp;
+    std::copy(temp.begin(), temp.end(), std::ostream_iterator<char>(data));
+    #else
     std::copy(buf.begin(), buf.end(), std::ostream_iterator<char>(data));
+    #endif
   }
 
   SpyGuard spyGuard(SpyRange::iterator begin, SpyRange::iterator end) {

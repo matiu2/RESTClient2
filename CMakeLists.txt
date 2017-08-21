@@ -4,8 +4,12 @@ project(RESTClient)
 
 option(IS_CLANG "Are we using the clang compiler?" ON)
 option(ENABLE_TESTS "Enable building and running of tests?" ON)
+option(LOG_THE_WIRE "Logs all data sent and receieved" OFF)
 if (ENABLE_TESTS)
   enable_testing()
+endif()
+if (LOG_THE_WIRE)
+  add_definitions(-DLOG_THE_WIRE)
 endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1z -stdlib=libc++ -fPIC")
