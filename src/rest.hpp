@@ -24,7 +24,7 @@ public:
         conn(baseURL.hostname, baseURL.protocol, yield, baseURL.is_ssl()) {
     // We don't want the '/' to be on the end of the baseURL; we add it on to
     // every request if needed
-    if (this->baseURL.back() == '/')
+    while ((baseURL.whole().size() > 0) && (this->baseURL.back() == '/'))
       this->baseURL.erase(this->baseURL.end() - 1);
   }
   inline http::Request get(const std::string &path) {
