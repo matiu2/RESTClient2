@@ -4,9 +4,11 @@
 #include "sendBody.hpp"
 #include "ReadResponse.hpp"
 #include "../logging.hpp"
+#include "istream_for_beast.hpp"
 
 #include <sstream>
 #include <boost/optional.hpp>
+#include <boost/beast.hpp>
 
 namespace RESTClient {
 namespace http {
@@ -71,6 +73,29 @@ boost::optional<size_t> checkForContentLength(const Headers *defaultHeaders,
 Response Request::go() const {
   // Get a TCP/IP connection from the connection pool
   URL url(this->url);
+  
+  using namespace boost::beast;
+  using namespace boost::beast::http;
+
+  // Generic lambda that does the work of filling the request object
+  auto fill = [](auto &req) {
+  };
+
+
+  // First see what kind of body we need to send
+  if (body_stream) {
+    request<IStreamBody> req;
+    fill(req);
+  } else if (body_string) {
+    request<StringBody> req;
+    fill(req);
+  } else {
+    request<EmptyBody> req;
+    fill(req);
+  }
+  
+
+
   // Send the request line
   LOG_S(8) << "Request First Line: " << _verb << " " << url.path_part()
            << " HTTP/1.1";

@@ -90,3 +90,21 @@ include_directories(${JSON_INCLUDE_DIR})
 find_library(JSON_LIB json
              PATHS ${CMAKE_CURRENT_BINARY_DIR}/3rd_party/src/json_spirit-build
              NO_DEFAULT_PATH)
+
+## Beast - Allows us to talk to Rackspace cloud files et al.
+
+ExternalProject_Add(Beast
+    PREFIX 3rd_party
+    GIT_REPOSITORY https://github.com/boostorg/beast.git
+    TLS_VERIFY true
+    GIT_SHALLOW 1
+    TLS_CAINFO certs/DigiCertHighAssuranceEVRootCA.crt
+    TEST_BEFORE_INSTALL 0
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    TEST_COMMAND ""   # Requires generation of rackspace credentials
+    UPDATE_COMMAND "" # Skip annoying updates for every build
+    INSTALL_COMMAND ""
+)
+SET(BEAST_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/3rd_party/src/Beast/include")
+INCLUDE_DIRECTORIES(${BEAST_INCLUDE_DIR})
